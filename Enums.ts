@@ -48,3 +48,8 @@ export enum LandTypes {
 , mountain= 'mountain'
 , island= 'island'
 };
+
+export enum TapPurpose{
+	mana= 'mana'
+,	action= 'action'
+}

@@ -1,37 +1,7 @@
-import {Type, CardLocation, Color, ColorMap, Multicolored, LandTypes} from './Enums.js';
+import {Type, CardLocation, Color, ColorMap, Multicolored, LandTypes, TapPurpose} from './Enums.js';
+import {CardBehavior, CardVisibilityBehavior, CardEntranceBehavior, CardBattlefieldBehavior, CardExitBehavior, shouldEnterTapped} from './CardBehavior.js';
 import dataset from './noForeignModernAtomic.json' with { type: "json" };
 
-// console.log(Object.keys(dataset))
-/*
-"Swamp": [
-	{
-		"colorIdentity": [
-			"B"
-		],
-		"colors": [],
-		"convertedManaCost": 0,
-		"edhrecSaltiness": 0.29,
-		"firstPrinting": "LEA",
-		"identifiers": {
-			"scryfallOracleId": "56719f6a-1a6c-4c0a-8d21-18f7d7350b68"
-		},
-		"layout": "normal",
-		"manaValue": 0,
-		"name": "Swamp",
-		"subtypes": [
-			"Swamp"
-		],
-		"supertypes": [
-			"Basic"
-		],
-		"text": "({T}: Add {B}.)",
-		"type": "Basic Land — Swamp",
-		"types": [
-			"Land"
-		]
-	}
-],
-*/
 
 type Payment = [color: Color, quantity: number];
 
@@ -56,27 +26,6 @@ class Cost {
 	}
 }
 
-/*
-	CardBehavior is how the card behaves as a card.
-	Like... if when you're playing, what you PHYSICALLY can denote with the card via its position
-	orientation, location, etc.
-*/
-class CardBehavior{
-
-	tapsForMana: boolean;
-	entersBattlefieldTapped: boolean;
-	hitsGraveyardOnDeath: boolean;
-	hitsExileOnDeath: boolean;
-	locationOnDeath: CardLocation;
-
-	constructor(entersBattlefieldTapped, tapsForMana=false, hitsGraveyardOnDeath=true, hitsExileOnDeath=false, locationOnDeath=CardLocation.graveyard){
-		this.tapsForMana = tapsForMana;
-		this.entersBattlefieldTapped = entersBattlefieldTapped;
-		this.hitsGraveyardOnDeath = hitsGraveyardOnDeath;
-		this.hitsExileOnDeath = hitsExileOnDeath;
-		this.locationOnDeath = locationOnDeath;
-	}
-}
 
 class StandardCard{
 	behavior: CardBehavior;
@@ -105,24 +54,26 @@ class StandardCard{
 }
 
 
-function shouldEnterTapped(cardInfoText){
-	return cardInfoText.includes("enters the battlefield tapped");
-}
+
 
 class BasicLand extends StandardCard{
 	constructor(color, name, description, rawData){
-		let behavior = new CardBehavior(shouldEnterTapped(description), true);
+		let visibilityBehavior = new CardVisibilityBehavior(CardLocation.library, false);
+		let entranceBehavior = new CardEntranceBehavior(false, false, shouldEnterTapped(description));
+		let battlefieldBehavior = new CardBattlefieldBehavior(false, false, true, false, false, false, false, TapPurpose.mana)
+		let exitBehavior = new CardExitBehavior(true, false, CardLocation.graveyard);
+		let behavior = new CardBehavior(visibilityBehavior, entranceBehavior, battlefieldBehavior, exitBehavior);
 		super(Type.land, color, 0, name, description, behavior, rawData)
 	}
 }
-
-class NonbasicLand extends BasicLand{
-	constructor(color, name, description, rawData){
-
-		super(color, name, description, rawData);
-
-	}
-}
+//
+// class NonbasicLand extends BasicLand{
+// 	constructor(color, name, description, rawData){
+//
+// 		super(color, name, description, rawData);
+//
+// 	}
+// }
 
 const deck = [];
 const lands = [];
@@ -139,23 +90,10 @@ for (let cardname in dataset){
 	}
 }
 
+deck.forEach(c=>{
+	console.log(c);
+})
 
 lands.forEach(l=>{
 	// console.log(l.types, l.supertypes, l.subtypes, l.text)
 });
-
-/*
-let ds = "Darkslick Shores";
-let dsdesc = `${ds} enters the battlefield tapped unless you control two or fewer lands.`;
-let dsbeh = new CardBehavior(true, true);
-let blueBlackLand = new StandardCard(
-	Type.land,
-	[Color.black, Color.blue],
-	0,
-	ds,
-	dsdesc,
-	dsbeh
-);
-
-blueBlackLand.log();
-*/
