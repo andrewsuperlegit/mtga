@@ -1,4 +1,4 @@
-import {Type, CardLocation, Color, ColorMap, Multicolored, LandTypes, TapPurpose} from './Enums.js';
+import {Type, CardLocation, Color, ColorMap, ColorKeywords, Multicolored, LandTypes, TapPurpose} from './Enums.js';
 import {CardBehavior, CardVisibilityBehavior, CardEntranceBehavior, CardBattlefieldBehavior, CardExitBehavior, shouldEnterTapped} from './CardBehavior.js';
 import dataset from './noForeignModernAtomic.json' with { type: "json" };
 
@@ -54,9 +54,42 @@ class StandardCard{
 }
 
 
+const LOGLEVEL = 'NORMAL';
+// const LOGLEVEL = 'DEBUG';
+
+const manaSearchRegex = /\{\w+\}|(\sor\s)|(\sand\s)|(add)|\./ig;
+
+function identifyKeywords(text:string):string[]{
+	let keywords = text.match(manaSearchRegex);
+	if(LOGLEVEL === 'DEBUG'){ console.log('\nidentifyKeywords', keywords, text, '\n'); }
+	return keywords;
+}
+
+
+function identifyManaToTap(text){
+	let keywords = identifyKeywords(text);
+	let indexOfTap = keywords.findIndex((text) => text === '{T}')
+	let sliced = keywords.slice(indexOfTap);
+	let endOfSentenceIndex = sliced.findIndex((text)=> text === '.');
+	let manaKeywords = sliced.slice(0, endOfSentenceIndex);
+
+
+	if(LOGLEVEL === 'DEBUG'){ console.log('\nidentifyManaToTap', manaKeywords, text, '\n')}
+	return manaKeywords;
+}
 
 
 class BasicLand extends StandardCard{
+	manaTapAmount = {
+		[Color.B]: 0
+	,	[Color.W]: 0
+	,	[Color.G]: 0
+	,	[Color.R]: 0
+	,	[Color.U]: 0
+	, [Color.C]: 0
+	};
+	manaAmountIsMutuallyExclusive: boolean;
+
 	constructor(color, name, description, rawData){
 		let visibilityBehavior = new CardVisibilityBehavior(CardLocation.library, false);
 		let entranceBehavior = new CardEntranceBehavior(false, false, shouldEnterTapped(description));
@@ -64,16 +97,36 @@ class BasicLand extends StandardCard{
 		let exitBehavior = new CardExitBehavior(true, false, CardLocation.graveyard);
 		let behavior = new CardBehavior(visibilityBehavior, entranceBehavior, battlefieldBehavior, exitBehavior);
 		super(Type.land, color, 0, name, description, behavior, rawData)
+		this.setManaTapAmount(identifyManaToTap(description));
+	}
+
+	setManaTapAmount(manaValueArray){
+		manaValueArray.forEach((keyword)=>{
+			if(this.manaTapAmount.hasOwnProperty(ColorKeywords[keyword])){
+				this.manaTapAmount[ColorKeywords[keyword]]++;
+			}
+		});
+
+		if(manaValueArray.includes(' or ')){
+			this.manaAmountIsMutuallyExclusive = true;
+		} else {
+			this.manaAmountIsMutuallyExclusive = false;
+		}
 	}
 }
-//
-// class NonbasicLand extends BasicLand{
-// 	constructor(color, name, description, rawData){
-//
-// 		super(color, name, description, rawData);
-//
-// 	}
-// }
+
+class NonBasicLand extends BasicLand{
+	constructor(color, name, description, rawData){
+		super(color, name, description, rawData);
+		this.identifyOtherTappingBehaviors(description);
+	}
+
+	identifyOtherTappingBehaviors(description){
+		// console.log('\n\n', description);
+
+	}
+
+}
 
 const deck = [];
 const lands = [];
@@ -81,19 +134,26 @@ const lands = [];
 for (let cardname in dataset){
 	let card = dataset[cardname][0];
 	if(card.types.includes(Type.land)){
-		lands.push(card);
+		let color = (card.colorIdentity.length > 0) ? card.colorIdentity[0] : ColorMap.colorless;
+
 		if(card.supertypes.includes(Type.basic)){
-			let color = (card.colorIdentity.length > 0) ? card.colorIdentity[0] : ColorMap.colorless;
 			deck.push(new BasicLand(color, card.name, card.text, card))
+		} else {
+			lands.push(new NonBasicLand(color, card.name, card.text, card));
 		}
 
 	}
 }
 
 deck.forEach(c=>{
-	console.log(c);
+	// console.log(c);
 })
 
 lands.forEach(l=>{
-	// console.log(l.types, l.supertypes, l.subtypes, l.text)
+	// console.log('\n', l.name, l)
+	if(l.name === "Wooded Bastion"){
+		console.log(l);
+	}
 });
+
+// console.log(lands.length)

@@ -5,7 +5,7 @@ import {CardLocation, TapPurpose} from './Enums.js';
 	Like... if when you're playing, what you PHYSICALLY can denote with the card via its position
 	orientation, location, etc.
 
-	A lot of this stuff i'm hard coding right now but REALLY what SHOULD happen is we should determine things like canTap and canTurnFaceUp and everything else based on parsing the raw card text and inferring it based on like... types and stuff. 
+	A lot of this stuff i'm hard coding right now but REALLY what SHOULD happen is we should determine things like canTap and canTurnFaceUp and everything else based on parsing the raw card text and inferring it based on like... types and stuff.
 */
 export class CardBehavior{
 	currentLocation: CardLocation;
@@ -59,6 +59,7 @@ export class CardBattlefieldBehavior{
 		this.canTap = canTap;
 		this.canTurnFaceUp = canTurnFaceUp;
 		this.isFaceDown = isFaceDown;
+		this.isSummonSick = isSummonSick;
 		this.isTapped = isTapped;
 		this.tapPurpose = tapPurpose;
 	}

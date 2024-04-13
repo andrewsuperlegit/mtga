@@ -21,14 +21,15 @@ export enum CardLocation {
 ,	library= 'library'
 };
 
-export enum Color{
-	B = "black"
-,	U = "blue"
-,	C = "colorless"
-,	G = "green"
-,	R = "red"
-,	W = "white"
+export enum Color {
+	B = "B"
+,	U = "U"
+,	C = "C"
+,	G = "G"
+,	R = "R"
+,	W = "W"
 }
+
 export enum ColorMap{
 	black = "B"
 ,	blue = "U"
@@ -37,6 +38,16 @@ export enum ColorMap{
 ,	red = "R"
 ,	white = "W"
 }
+
+function createBracketWrappedColors(){
+	const bracketed = {};
+	for (const [key, value] of Object.entries(Color)) {
+		bracketed[`{${key}}`] = value;
+	}
+	return bracketed;
+}
+
+export const ColorKeywords = createBracketWrappedColors();
 
 
 export type Multicolored = Color[];
