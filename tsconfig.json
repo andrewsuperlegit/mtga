@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"module": "NodeNext"
+	,	"moduleResolution": "NodeNext"
+	,	"resolveJsonModule": true
+	,	"sourceMap": true
+	, "outDir": "./public/js/dist"
+	,	"typeRoots": ["./src/types", "./types"]
+
+	}
+,	"include": ["src/**/*"]
+}
