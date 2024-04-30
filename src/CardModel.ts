@@ -1,8 +1,9 @@
-import {Type, CardLocation, Color, ColorMap, ColorKeywords, Multicolored, LandTypes, TapPurpose} from './Enums.js';
-import {CardBehavior, CardVisibilityBehavior, CardEntranceBehavior, CardBattlefieldBehavior, CardExitBehavior, shouldEnterTapped} from './CardBehavior.js';
+import {Type, CardLocation, Color, ColorMap, ColorKeywords, Multicolored, LandTypes, TapPurpose} from './Enums';
+import {CardBehavior, CardVisibilityBehavior, CardEntranceBehavior, CardBattlefieldBehavior, CardExitBehavior, shouldEnterTapped} from './CardBehavior';
 import dataset from './noForeignModernAtomic.json' with { type: "json" };
 
-const LOGLEVEL = Window.LOGLEVEL || 'NORMAL';
+const LOGLEVEL = 'NORMAL';
+
 
 type Payment = [color: Color, quantity: number];
 
@@ -120,7 +121,7 @@ class NonBasicLand extends BasicLand{
 	constructor(color, name, description, rawData){
 		super(color, name, description, rawData);
 		this.identifyOtherTappingBehaviors(description);
-		this.log()
+		// this.log()
 
 	}
 
@@ -131,7 +132,7 @@ class NonBasicLand extends BasicLand{
 		// {G/W}, {T}: Add {G}{G}, {G}{W}, or {W}{W}.' <--- FUCK.
 		// ^^^^ and also the comma. fuck.
 		let keywords = identifyKeywords(description);
-		console.log(description, keywords);
+		// console.log(description, keywords);
 	}
 
 }
@@ -155,6 +156,12 @@ for (let cardname in dataset){
 	}
 }
 
+
+
+
+
+
+
 deck.forEach(c=>{
 	// console.log(c);
 })
@@ -166,4 +173,6 @@ lands.forEach(l=>{
 	}
 });
 
-// console.log(lands.length)
+console.log('dudeaaaaaakkkkkkk')
+
+export { lands, deck };

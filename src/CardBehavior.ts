@@ -1,5 +1,9 @@
 import {CardLocation, TapPurpose} from './Enums.js';
 
+console.log('bruh');
+
+
+
 /*
 	CardBehaviors are how the card behaves as a card.
 	Like... if when you're playing, what you PHYSICALLY can denote with the card via its position
