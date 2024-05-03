@@ -44,6 +44,10 @@ body {
 	margin: 10px;
 	height: 300px;
 	width: 250px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	transition: transform 0.3s;
 }
 
 
@@ -75,4 +79,11 @@ body {
 	flex-direction: row;
 	align-items: stretch;
 	justify-content: space-between;
+}
+.tapped{
+	transform: rotate(90deg);
+
+}
+.summon-sick{
+	transform: rotate(20deg);
 }

@@ -1,8 +1,5 @@
-import {CardLocation, TapPurpose} from './Enums.js';
-
-console.log('bruh');
-
-
+import {CardLocation, TapPurpose} from './Enums';
+import {tap} from './Actions';
 
 /*
 	CardBehaviors are how the card behaves as a card.
@@ -25,6 +22,14 @@ export class CardBehavior{
 		this.entranceBehavior = entranceBehavior;
 		this.battlefieldBehavior = battlefieldBehavior;
 		this.exitBehavior = exitBehavior;
+	}
+
+	tapForMana(dispatch){
+		// console.log(this.battlefieldBehavior.isTapped)
+		this.battlefieldBehavior.isTapped = !this.battlefieldBehavior.isTapped;
+		// console.log(this.battlefieldBehavior.isTapped)
+		dispatch(tap({data: this, isTapped: this.battlefieldBehavior.isTapped}));
+
 	}
 }
 
