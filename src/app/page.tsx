@@ -6,13 +6,19 @@ import { useSelector } from 'react-redux';
 
 
 function Libraries(){
-	const libraries = useSelector((state: RootState) => state.game.libraries);
+	const game = useSelector((state: RootState) => state.game);
+	const libraries = game.libraries;
+
 	const opponentsDeck = libraries[0];
 	const yourDeck = libraries[1];
+
 	return (
 		<>
-			<Library whos="Opponent" deck={opponentsDeck}/>
-			<Library whos="Your" data={yourDeck}/>
+			
+			<div>
+				<Library whos="Opponent" deck={opponentsDeck}/>
+				<Library whos="Your" deck={yourDeck}/>
+			</div>
 		</>
 	);
 }

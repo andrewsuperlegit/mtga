@@ -7,7 +7,7 @@ import type { RootState } from '../../app/store'
 import { useSelector, useDispatch } from 'react-redux'
 import { tap } from './../Actions';
 
-export default function Card({name, color, cost, description, behavior, keyName}){
+export default function Card({card, keyName}){
 	const [isActive, setActive] = useState(false);
 	// setActive(behavior.battlefieldBehavior.isTapped);
 	const game = useSelector((state: RootState) => state.game);
@@ -15,18 +15,16 @@ export default function Card({name, color, cost, description, behavior, keyName}
 
 	function getClassNames(){
 		return clsx(
-		`${color}-color card`, {
-			'tapped': behavior.battlefieldBehavior.isTapped === true,
-			'untapped': behavior.battlefieldBehavior.isTapped === false,
-			'summon-sick': behavior.battlefieldBehavior.isSummonSick === true
+		`${card.color}-color card`, {
+			'tapped': card.behavior.battlefieldBehavior.isTapped === true,
+			'untapped': card.behavior.battlefieldBehavior.isTapped === false,
+			'summon-sick': card.behavior.battlefieldBehavior.isSummonSick === true
 		}
 	);
 	}
 
 	function tap(){
-		behavior.tapForMana(dispatch);
-		// setActive(!isActive);
-		// dispatch(tap(data))
+		card.behavior.tapForMana(dispatch, card);
 	}
 
 	return(
@@ -37,8 +35,8 @@ export default function Card({name, color, cost, description, behavior, keyName}
 		onClick={tap}
 		>
 			<header className="card-header">
-				<h1>{name}, {keyName}</h1>
-				<h2>{cost}</h2>
+				<h1>{card.name}, {keyName}</h1>
+				<h2>{card.cost}</h2>
 			</header>
 			<div className="image-wrapper">
 				<Image
@@ -48,7 +46,7 @@ export default function Card({name, color, cost, description, behavior, keyName}
 				width={180}
 				height={37}/>
 			</div>
-			<p>{description}</p>
+			<p>{card.description}</p>
 		</section>
 		</>
 	)

@@ -39,7 +39,7 @@ export enum ColorMap{
 ,	white = "W"
 }
 
-function createBracketWrappedColors(){
+function createBracketWrappedColors(): Object{
 	const bracketed = {};
 	for (const [key, value] of Object.entries(Color)) {
 		bracketed[`{${key}}`] = value;

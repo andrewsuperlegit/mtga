@@ -24,11 +24,11 @@ export class CardBehavior{
 		this.exitBehavior = exitBehavior;
 	}
 
-	tapForMana(dispatch){
-		// console.log(this.battlefieldBehavior.isTapped)
+	tapForMana(dispatch, card){
+		// pretty sure this should be done by the reducer or the action not here but whatever for right now.
 		this.battlefieldBehavior.isTapped = !this.battlefieldBehavior.isTapped;
-		// console.log(this.battlefieldBehavior.isTapped)
-		dispatch(tap({data: this, isTapped: this.battlefieldBehavior.isTapped}));
+
+		dispatch(tap({data: card, isTapped: this.battlefieldBehavior.isTapped}));
 
 	}
 }

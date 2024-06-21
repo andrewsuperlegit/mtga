@@ -90,7 +90,7 @@ class BasicLand extends StandardCard{
 	,	[Color.U]: 0
 	, [Color.C]: 0
 	};
-	manaAmountIsMutuallyExclusive: boolean;
+	manaAmountIsMutuallyExclusive: boolean = false;
 
 	constructor(color, name, description, rawData){
 		let visibilityBehavior = new CardVisibilityBehavior(CardLocation.library, false);

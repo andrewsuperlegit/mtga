@@ -6,20 +6,54 @@ export interface GameState {
   libraries: object[]
 }
 
-const initialState: GameState = {
-  libraries: [deck, lands]
+
+enum MetaGamePhase{
+	ChoosePlayerCount
+,	ConfirmLibrary
+,	ChooseFirstTurn
+,	InitialDraw
+,	MulliganChoice
+,	ActiveGame
+,	EndGame
+,	DeclareWinner
 }
-// need to store the both decks here,
-// and then search the deck for the card being tapped and then tap it.
+
+enum GamePhase{
+	PreGame
+}
+
+const initialState: GameState = {
+	libraries: [deck, lands]
+,	graveyards: []
+,	hands: []
+,	exiles: []
+, metaGamePhase: MetaGamePhase.ChoosePlayerCount
+, gamePhase: GamePhase.PreGame
+, playerCount: 0
+, confirmedLibraries: []
+, playerNames: []
+, firstPlayer: -1
+, currentPlayersTurn: -1
+}
+
+
 export const gameSlice = createSlice({
-  name: 'game',
-  initialState,
-  reducers: {
-    tap: (state, action: PayloadAction<object>) => {
+	name: 'game'
+,	initialState
+,	reducers: {
+		tap: (state, action: PayloadAction<object>) => {
+			state.value = action.payload;
+		}
+	,	progressMetaGamePhase: (state, action:PayloadAction<number>)=>{
+			state.metaGamePhase += 1;
+		}
+	,	confirmLibrary: (state, action:PayloadAction<object>)=>{
 			console.log(action);
-      state.value = action.payload;
-    }
-  },
+			// if(state.confirmedLibraries.length === state.playerCount){
+
+			// }
+		}
+  }
 })
 
 
