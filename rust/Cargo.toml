@@ -1,0 +1,10 @@
+[package]
+name = "rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+enum-iterator = "2.1.0"
+redux-rs = "0.3.3"
+strum = "0.26.2"
+strum_macros = "0.26.4"

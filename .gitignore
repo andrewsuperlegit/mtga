@@ -5,8 +5,10 @@ node_modules
 */node_modules
 package-lock.json
 
-
-
+rust/target
+rust/target/**/*
+.idea
+**/*/.idea
 # dependencies
 /node_modules
 /.pnp
