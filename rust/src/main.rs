@@ -95,11 +95,24 @@ enum TurnPhase{
 	Cleanup
 }
 
+// this is gonna be the master list of cards for when we deserialize
+// that big json file, and will allow us to accept a list of card
+// names as input and insert those cards into peoples' libraries.
+struct CardDB {
+	library: HashMap<String, Card>,
+}
 
+// Library is the LIBRARY which can be like... shuffled and stuff
+// cards is just a hashmap of cards so that when someone searches
+// for cards, we can give them the option to type the card theyre
+// looking for and look it up in constant time.
+// sideboard is optional
 struct Library {
-	cards: Vec<Card>,
+	library: Vec<Card>,
+	cards: HashMap<String, Card>,
 	sideboard: Vec<Option<Card>>
 }
+
 struct Player{
 	name: String
 }
@@ -182,7 +195,7 @@ struct PhysicalBehavior {
 #[derive(Debug)]
 struct Card{
 	physical_behavior: PhysicalBehavior,
-	card_type: CardType,
+	card_type: Vec<CardType>,
 	color: Vec<Color>,
 	cost: Cost,
 	description: String,
@@ -193,47 +206,18 @@ struct Card{
 
 }
 
+fn populate_db(){
+	todo!("Write the CardDB parser that will take all the cards \
+	from the json file, and populate the CardDB with them.");
+}
 
+fn populate_library(){
+	todo!("Write the parser that accepts a vector of card names \
+	and searches the CardDB for those cards, and adds them to \
+	a players library");
+}
 
 fn main() {
-	let vis_b = VisibilityBehavior {
-		current_location: CardLocation::Library,
-		is_revealed: false
-	};
-	let entrance_b = EntranceBehavior {
-		can_have_summoning_sickness: false,
-		enters_battlefield_on_instant_stack: false,
-		enters_battlefield_tapped: false
-	};
-	let battle_b = BattlefieldBehavior {
-		can_attack: false,
-		can_block: false,
-		can_tap: true,
-		can_turn_face_up: false,
-		is_tapped: false,
-		is_face_down: false,
-		is_summon_sick: false,
-		tap_purpose: vec![TapPurpose::Mana],
-	};
-	let exit_b = ExitBehavior {
-		hits_graveyard_on_death: true,
-		hits_exile_on_death: false,
-		location_on_death: CardLocation::Graveyard,
-	};
-	let card_behavior = PhysicalBehavior {
-		visibility_behavior: vis_b,
-		entrance_behavior: entrance_b,
-		battlefield_behavior: battle_b,
-		exit_behavior: exit_b,
-	};
-	let card = Card {
-		physical_behavior: card_behavior,
-		card_type: Land,
-		color: vec![Color::Green],
-		cost: Cost::new(vec![]),
-		description: "derp".to_string(),
-		name: "Forest".to_string(),
-	};
 
 }
 
@@ -298,5 +282,48 @@ mod tests {
 		assert_eq!(*cost.cost.get(&Color::None).unwrap(), 0);
 		assert_eq!(cost.cost.contains_key(&Color::Green), false);
 		assert_eq!(cost.cost.contains_key(&Color::None), true);
+	}
+
+	#[test]
+	fn valid_card_can_be_made(){
+		let vis_b = VisibilityBehavior {
+			current_location: CardLocation::Library,
+			is_revealed: false
+		};
+		let entrance_b = EntranceBehavior {
+			can_have_summoning_sickness: false,
+			enters_battlefield_on_instant_stack: false,
+			enters_battlefield_tapped: false
+		};
+		let battle_b = BattlefieldBehavior {
+			can_attack: false,
+			can_block: false,
+			can_tap: true,
+			can_turn_face_up: false,
+			is_tapped: false,
+			is_face_down: false,
+			is_summon_sick: false,
+			tap_purpose: vec![TapPurpose::Mana],
+		};
+		let exit_b = ExitBehavior {
+			hits_graveyard_on_death: true,
+			hits_exile_on_death: false,
+			location_on_death: CardLocation::Graveyard,
+		};
+		let card_behavior = PhysicalBehavior {
+			visibility_behavior: vis_b,
+			entrance_behavior: entrance_b,
+			battlefield_behavior: battle_b,
+			exit_behavior: exit_b,
+		};
+		let card = Card {
+			physical_behavior: card_behavior,
+			card_type: vec![Land],
+			color: vec![Color::Green],
+			cost: Cost::new(vec![]),
+			description: "derp".to_string(),
+			name: "Forest".to_string(),
+		};
+		assert_eq!(card.name, "Forest");
 	}
 }
