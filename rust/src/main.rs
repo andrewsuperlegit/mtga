@@ -1,4 +1,5 @@
 #![allow(warnings)]
+#[derive(Debug)]
 enum CardType {
 	Artifact,
 	Battle,
@@ -14,7 +15,7 @@ enum CardType {
 	Legendary,
 	Snow,
 }
-
+#[derive(Debug)]
 enum CardLocation {
 	Exile,
 	Graveyard,
@@ -32,7 +33,8 @@ enum Color {
 	Black,
 	#[strum(serialize="blue", serialize="U", serialize="{blue}", ascii_case_insensitive)]
 	Blue,
-	#[strum(serialize="colorless", serialize="C", serialize="{colorless}", ascii_case_insensitive)]
+	#[strum(serialize="colorless", serialize="C", serialize="{colorless}",
+		ascii_case_insensitive)]
 	Colorless,
 	#[strum(serialize="green", serialize="G", serialize="{green}", ascii_case_insensitive)]
 	Green,
@@ -42,7 +44,7 @@ enum Color {
 	White,
 	None
 }
-
+#[derive(Debug)]
 enum LandTypes{
 	Swamp,
 	Plain,
@@ -51,6 +53,7 @@ enum LandTypes{
 	Island,
 	Waste
 }
+#[derive(Debug)]
 enum TapPurpose{
 	Mana,
 	Action
@@ -114,6 +117,7 @@ struct Payment{
 	quantity: u8
 }
 use std::collections::HashMap;
+use crate::CardType::Land;
 
 #[derive(Debug)]
 struct Cost {
@@ -132,21 +136,98 @@ impl Cost {
 		return Self {cost}
 	}
 }
+#[derive(Debug)]
+struct VisibilityBehavior {
+	current_location: CardLocation,
+	is_revealed: bool
+}
+#[derive(Debug)]
+struct EntranceBehavior{
+	can_have_summoning_sickness: bool,
+	enters_battlefield_on_instant_stack: bool,
+	enters_battlefield_tapped: bool
+}
+#[derive(Debug)]
+struct BattlefieldBehavior {
+	can_attack: bool,
+	can_block: bool,
+	can_tap: bool,
+	can_turn_face_up: bool,
+	is_face_down: bool,
+	is_summon_sick: bool,
+	is_tapped: bool,
+	tap_purpose: Vec<TapPurpose>,
+}
+#[derive(Debug)]
+struct ExitBehavior {
+	hits_graveyard_on_death: bool,
+	hits_exile_on_death: bool,
+	location_on_death: CardLocation,
+}
 
-struct CardBehavior{}
+#[derive(Debug)]
+struct PhysicalBehavior {
+	visibility_behavior: VisibilityBehavior,
+	entrance_behavior: EntranceBehavior,
+	battlefield_behavior: BattlefieldBehavior,
+	exit_behavior: ExitBehavior,
+}
 
+#[derive(Debug)]
 struct Card{
-	behavior: CardBehavior,
+	physical_behavior: PhysicalBehavior,
 	card_type: CardType,
 	color: Vec<Color>,
 	cost: Cost,
 	description: String,
-	location: CardLocation,
+	//location: &'a CardLocation, // not having this because it makes life complicated;
+	// will instead use a get method as per
+	// https://shorturl.at/3qeyh
 	name: String,
+
 }
 
 
+
 fn main() {
+	let vis_b = VisibilityBehavior {
+		current_location: CardLocation::Library,
+		is_revealed: false
+	};
+	let entrance_b = EntranceBehavior {
+		can_have_summoning_sickness: false,
+		enters_battlefield_on_instant_stack: false,
+		enters_battlefield_tapped: false
+	};
+	let battle_b = BattlefieldBehavior {
+		can_attack: false,
+		can_block: false,
+		can_tap: true,
+		can_turn_face_up: false,
+		is_tapped: false,
+		is_face_down: false,
+		is_summon_sick: false,
+		tap_purpose: vec![TapPurpose::Mana],
+	};
+	let exit_b = ExitBehavior {
+		hits_graveyard_on_death: true,
+		hits_exile_on_death: false,
+		location_on_death: CardLocation::Graveyard,
+	};
+	let card_behavior = PhysicalBehavior {
+		visibility_behavior: vis_b,
+		entrance_behavior: entrance_b,
+		battlefield_behavior: battle_b,
+		exit_behavior: exit_b,
+	};
+	let card = Card {
+		physical_behavior: card_behavior,
+		card_type: CardType::Land,
+		color: vec![Color::Green],
+		cost: Cost::new(vec![]),
+		description: "derp".to_string(),
+		name: "Forest".to_string(),
+	};
 }
 
 #[cfg(test)]
