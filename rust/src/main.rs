@@ -1,5 +1,7 @@
 #![allow(warnings)]
-#[derive(Debug)]
+
+#[derive(Debug, PartialEq, EnumString, Eq, VariantNames, VariantArray)]
+#[strum(serialize_all="lowercase")]
 enum CardType {
 	Artifact,
 	Battle,
@@ -9,6 +11,7 @@ enum CardType {
 	Equipment,
 	Instant,
 	Land,
+	#[strum(ascii_case_insensitive)]
 	Planeswalker,
 	Sorcery,
 	Basic,
@@ -93,7 +96,10 @@ enum TurnPhase{
 }
 
 
-struct Library{}
+struct Library {
+	cards: Vec<Card>,
+	sideboard: Vec<Option<Card>>
+}
 struct Player{
 	name: String
 }
@@ -222,12 +228,13 @@ fn main() {
 	};
 	let card = Card {
 		physical_behavior: card_behavior,
-		card_type: CardType::Land,
+		card_type: Land,
 		color: vec![Color::Green],
 		cost: Cost::new(vec![]),
 		description: "derp".to_string(),
 		name: "Forest".to_string(),
 	};
+
 }
 
 #[cfg(test)]
@@ -272,6 +279,8 @@ mod tests {
 		assert_eq!(cost.cost.contains_key(&Color::Blue), false);
 		assert_eq!(*cost.cost.get(&Color::Green).unwrap(), 2);
 	}
+
+	#[test]
 	fn cost_accepts_multiple_payments(){
 		let cost = Cost::new(vec![
 			Payment{color: Color::Green, quantity: 2},
@@ -282,6 +291,8 @@ mod tests {
 		assert_eq!(*cost.cost.get(&Color::Green).unwrap(), 2);
 		assert_eq!(*cost.cost.get(&Color::Red).unwrap(), 3);
 	}
+
+	#[test]
 	fn cost_accepts_none_payments(){
 		let cost = Cost::new(vec![]);
 		assert_eq!(*cost.cost.get(&Color::None).unwrap(), 0);
