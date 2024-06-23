@@ -6,5 +6,6 @@ edition = "2021"
 [dependencies]
 enum-iterator = "2.1.0"
 redux-rs = "0.3.3"
+serde = "1.0.203"
 strum = "0.26.2"
 strum_macros = "0.26.4"
