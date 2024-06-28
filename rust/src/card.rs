@@ -1,8 +1,8 @@
 use serde::Deserialize;
 use strum_macros::{EnumString, VariantArray, VariantNames};
+use crate::card_db::get_card_db;
 use crate::colors::Color;
 use crate::cost::Cost;
-use crate::TapPurpose;
 
 #[derive(
 	Debug, PartialEq, EnumString, Eq, VariantNames,
@@ -28,12 +28,22 @@ pub enum CardType {
 	Tribal,
 }
 
+
 #[derive(Debug, Deserialize)]
+enum TapPurpose{
+	Mana,
+	Action,
+	None
+}
+
+#[derive(Debug, Default)]
 pub enum CardLocation {
 	Exile,
 	Graveyard,
 	Hand,
-	Library
+	Library,
+	#[default]
+	None
 }
 
 #[derive(Debug, Deserialize)]
@@ -47,20 +57,46 @@ enum LandTypes{
 }
 
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default)]
 pub struct VisibilityBehavior {
 	current_location: CardLocation,
-	is_revealed: bool
+	revealed: bool
+}
+impl VisibilityBehavior{
+	pub fn set_location(&mut self, location: CardLocation) {
+		self.current_location = location;
+	}
+	pub fn is_revealed(&self) -> bool{
+		self.revealed
+	}
 }
 
-#[derive(Debug, Deserialize)]
+
+
+#[derive(Debug, Default)]
 pub struct EntranceBehavior{
 	can_have_summoning_sickness: bool,
-	enters_battlefield_on_instant_stack: bool,
+	enters_on_instant_stack: bool,
 	enters_battlefield_tapped: bool
 }
 
-#[derive(Debug, Deserialize)]
+impl EntranceBehavior{
+	fn new(card: &Card) -> EntranceBehavior {
+		let can_have_summoning_sickness = card.card_types.contains(&CardType::Creature);
+		let enters_on_instant_stack = card.card_types.contains(&CardType::Instant) ||
+			card.keywords.contains(&"Flash".to_string());
+		// todo add checks for the word "unless" and ensure conditions are met
+		let enters_battlefield_tapped = card.description.contains("enters the battlefield tapped");
+
+		EntranceBehavior {
+			can_have_summoning_sickness,
+			enters_on_instant_stack,
+			enters_battlefield_tapped,
+		}
+	}
+}
+
+#[derive(Debug, Default)]
 pub struct BattlefieldBehavior {
 	can_attack: bool,
 	can_block: bool,
@@ -72,23 +108,99 @@ pub struct BattlefieldBehavior {
 	tap_purpose: Vec<TapPurpose>,
 }
 
-#[derive(Debug, Deserialize)]
+fn get_unbracketed_keywords(description:&str) -> Vec<char>{
+	let mut vec = vec![' '];
+	let mut chars = description.chars().enumerate();
+	while let Some(enumerated) = chars.next(){
+		let (i, c) = enumerated;
+		if c == '{' {
+			let closed = match description.chars().nth(i+2){
+				Some(rb) => rb == '}',
+				None => panic!("Error Parsing {}", description)
+			};
+			if closed {
+				let special_text = description.chars().nth(i+1).unwrap();
+				vec.push(special_text);
+			}
+			chars.next();
+			chars.next();
+			continue;
+		}
+	}
+	vec
+}
+
+
+fn can_tap(description:&str)->bool{
+	let unbracketed_keywords = get_unbracketed_keywords(description);
+	unbracketed_keywords.contains(&'T')
+}
+
+fn get_tap_purpose(card: &Card, can_tap: bool) -> Vec<TapPurpose> {
+	if can_tap == false {
+		return vec![TapPurpose::None];
+	}
+	//todo fix this so it's doing this better. probably need regex.
+	if card.description.contains("Add {") {
+		return vec![TapPurpose::Mana];
+	}
+	// todo more clearly specify which action type.
+	return vec![TapPurpose::Action];
+}
+
+impl BattlefieldBehavior{
+	fn new(card: &Card) -> BattlefieldBehavior {
+		let can_attack = card.card_types.contains(&CardType::Creature) &&
+			card.keywords.contains(&"Defender".to_string()) == false;
+		let can_block = card.card_types.contains(&CardType::Creature);
+		let can_tap = card.card_types.contains(&CardType::Land) || can_tap(&card.description);
+		let can_turn_face_up = card.keywords.contains(&"Disguise".to_string());
+		let is_face_down = false;
+		let is_summon_sick = false;
+		let is_tapped = false;
+		let tap_purpose = get_tap_purpose(card, can_tap);
+
+		BattlefieldBehavior{
+			can_attack,
+			can_block,
+			can_tap,
+			can_turn_face_up,
+			is_face_down,
+			is_summon_sick,
+			is_tapped,
+			tap_purpose,
+		}
+	}
+}
+
+
+
+#[derive(Debug, Default)]
 pub struct ExitBehavior {
 	hits_graveyard_on_death: bool,
 	hits_exile_on_death: bool,
 	location_on_death: CardLocation,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct PhysicalBehavior {
-	visibility_behavior: VisibilityBehavior,
-	entrance_behavior: EntranceBehavior,
-	battlefield_behavior: BattlefieldBehavior,
-	exit_behavior: ExitBehavior,
+impl ExitBehavior{
+	fn update_hits_graveyard_on_death(&mut self, should_go_to_graveyard: bool){
+		self.hits_graveyard_on_death = should_go_to_graveyard;
+	}
+	fn update_hits_exile_on_death(&mut self, should_hit_exile:bool){
+		self.hits_exile_on_death = should_hit_exile;
+	}
+	fn update_location_on_death(&mut self, death_location: CardLocation) {
+		self.location_on_death = death_location;
+	}
 }
 
 
-#[derive(Debug, Deserialize)]
+/// A Card is more or less a direct mapping from
+/// [mtgjson](https://mtgjson.com/data-models/card/card-atomic/#card-atomic)
+/// with a bunch of the excess properties removed.
+///
+/// This is mostly used just to deserialize the data in the json files so we can use it in rust.
+#[derive(Debug, Deserialize, Default)]
 pub struct Card {
 	#[serde(rename(deserialize = "type"))]
 	pub card_type: String, // because stuff like Artifact - Equipment
@@ -109,10 +221,49 @@ pub struct Card {
 	#[serde(rename(deserialize = "manaValue"), default)]
 	pub mana_value: u8,
 	pub name: String,
-	// todo customize deserialization/parsing to do this
-	// physical_behavior: PhysicalBehavior,
+	// ACTUALLY we only need to do this for cards that are in LIBRARIES aka in the game
+	// no point in taking up a bunch of memory to add physical behaviors to cards that aren't
+	// gonna be in the game.
+	// #[serde(skip)]
+	// pub physical_behavior: PhysicalBehavior,
 	pub subtypes: Vec<String>,
 	pub supertypes: Vec<String>,
+}
+
+#[derive(Debug)]
+pub struct RealCard <'a>{
+	card: &'a Card,
+	name: &'a str,
+	visibility_behavior: VisibilityBehavior,
+	entrance_behavior: EntranceBehavior,
+	battlefield_behavior: BattlefieldBehavior,
+	exit_behavior: ExitBehavior,
+}
+
+impl RealCard<'_>{
+	pub fn new(name: &str)-> RealCard {
+		let db = get_card_db();
+		let card = db.get(name).unwrap();
+		let visibility_behavior = VisibilityBehavior {
+			current_location: CardLocation::Library,
+			revealed: false,
+		};
+		let entrance_behavior = EntranceBehavior::new(card);
+		let battlefield_behavior = BattlefieldBehavior::new(card);
+		let exit_behavior = ExitBehavior {
+			hits_graveyard_on_death: true,
+			hits_exile_on_death: false,
+			location_on_death: CardLocation::Graveyard
+		};
+		RealCard{
+			name,
+			card,
+			visibility_behavior,
+			entrance_behavior,
+			battlefield_behavior,
+			exit_behavior
+		}
+	}
 }
 
 
@@ -124,14 +275,38 @@ mod tests {
 	use super::*;
 
 	#[test]
+	fn can_tap_returns_true_the_only_behavior_in_desc_is_a_tap_behavior(){
+		let str = "{T}: Target creature gets +X/+X until end of turn, where X is Auriok Bladewarden's power.";
+		let res = can_tap(str);
+		assert_eq!(res, true);
+	}
+
+	#[test]
+	fn can_tap_returns_true_if_there_are_multiple_behaviors_and_tap_isnt_the_first_one(){
+		let str = "{W}, {T}: Tap target artifact.";
+		let res = can_tap(str);
+		assert_eq!(res, true);
+	}
+
+	#[test]
+	fn can_tap_returns_false_if_theres_no_tap_behavior_specified(){
+		let str = "{B}: Mill a card.\nDelirium — At the beginning of your end step, \
+		if there are four or more card types among cards in your graveyard, \
+		transform Autumnal Gloom.";
+		let res = can_tap(str);
+		assert_eq!(res, false);
+	}
+
+
+	#[test]
 	fn valid_card_can_be_made() {
 		let vis_b = VisibilityBehavior {
 			current_location: CardLocation::Library,
-			is_revealed: false
+			revealed: false
 		};
 		let entrance_b = EntranceBehavior {
 			can_have_summoning_sickness: false,
-			enters_battlefield_on_instant_stack: false,
+			enters_on_instant_stack: false,
 			enters_battlefield_tapped: false
 		};
 		let battle_b = BattlefieldBehavior {
@@ -148,12 +323,6 @@ mod tests {
 			hits_graveyard_on_death: true,
 			hits_exile_on_death: false,
 			location_on_death: CardLocation::Graveyard,
-		};
-		let card_behavior = PhysicalBehavior {
-			visibility_behavior: vis_b,
-			entrance_behavior: entrance_b,
-			battlefield_behavior: battle_b,
-			exit_behavior: exit_b,
 		};
 		let card = Card {
 			// physical_behavior: card_behavior,
