@@ -42,7 +42,7 @@ enum CardLocation {
 
 #[derive(
 	Debug, PartialEq, EnumString, Clone,
-	Hash, Eq, VariantNames, VariantArray,
+	Hash, Eq, VariantNames,
 	Deserialize
 )]
 #[strum(serialize_all="lowercase")]
@@ -77,8 +77,42 @@ enum Color {
 		serialize="{white}", ascii_case_insensitive
 	)]
 	W,
+	#[strum(
+		serialize="variable", serialize="x",
+		serialize="{x}", ascii_case_insensitive
+	)]
+	X,
+	#[strum(
+		serialize="snow", serialize="s",
+		serialize="{s}", ascii_case_insensitive
+	)]
+	S,
+	#[strum(
+		serialize="phyrexian", serialize="p",
+		serialize="{p}", ascii_case_insensitive
+	)]
+	P,
+	MultiColor { colors: Vec<Color>, multicolor_cost: Vec<u8> },
 	None
 }
+
+/*
+Colors is the ordered vector of colors
+multicolor_cost is the ordered vector of costs
+so for example:
+MultiColor{
+	colors: [Color::C, Color::G],
+	multicolor_cost: [2, 1]
+}
+means that for this MultiColor you either have to pay
+2 Colorless, or 1 Green.
+ */
+struct MultiColor{
+	colors: Vec<Color>,
+	multicolor_cost: Vec<u8>,
+}
+
+
 #[derive(Debug, Deserialize)]
 enum LandTypes{
 	Swamp,
@@ -206,9 +240,10 @@ struct Payment{
 	quantity: u8
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 struct Cost {
 	cost: HashMap<Color, u8>,
+	// has_variable_cost: bool
 }
 
 impl Cost {
@@ -229,6 +264,26 @@ impl Cost {
 		return Self {cost}
 	}
 }
+use std::borrow::Cow;
+use serde::Deserializer;
+
+impl<'de> Deserialize<'de> for Cost {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+		where
+			D: Deserializer<'de>,
+	{
+		// `&str` can't deserialize JSON strings with escapes, and `String`
+		// is not optimally efficient when there are no escapes, so we use
+		// `Cow`. `Cow`'s deserialization uses `str` when it can, otherwise
+		// it falls back to `String`.
+		let cow = Cow::<str>::deserialize(deserializer)?;
+		let s: &str = cow.as_ref();
+		Ok(parse_costs_better(s))
+		// Ok(parse_costs(s))
+	}
+}
+
+
 #[derive(Debug, Deserialize)]
 struct VisibilityBehavior {
 	current_location: CardLocation,
@@ -286,7 +341,7 @@ struct Card {
 	keywords: Vec<String>,
 	layout: String,
 	#[serde(rename(deserialize = "manaCost"), default)]
-	mana_cost: String,
+	mana_cost: Cost,
 	#[serde(rename(deserialize = "manaValue"), default)]
 	mana_value: u8,
 	name: String,
@@ -301,7 +356,6 @@ fn populate_library(){
 	and searches the CardDB for those cards, and adds them to \
 	a players library");
 }
-
 use regex::Regex;
 fn parse_costs(mana_cost: &str) -> Cost{
 	let re = Regex::new(r"\{(\w+)}").unwrap();
@@ -312,21 +366,156 @@ fn parse_costs(mana_cost: &str) -> Cost{
 		if color.parse::<u8>().is_ok(){
 			payments_vec.push(Payment{ color: Color::C, quantity: color.parse().unwrap() })
 		} else {
-			payments_vec.push(Payment { color: Color::from_str(color).unwrap(), quantity: 1 });
+			let color = Color::from_str(color).or_else(|err|{
+				println!("ERROR IS: {:?}, COLOR WAS: {}, MANA COST WAS:{}", err, color, mana_cost);
+				Err(Color::None)
+			}).unwrap();
+			payments_vec.push(Payment { color: color , quantity: 1 });
 		}
 	}
 	Cost::new(payments_vec)
 }
 
 
+
+fn parse_color(mana_cost: &str, c: char) -> Color {
+	if c.is_numeric(){
+		return Color::C;
+	}
+	let c = &c.to_string()[..];
+	let color = Color::from_str(c).or_else(|err| {
+		println!("ERROR IS: {:?}, COLOR WAS: {}, MANA COST WAS:{}", err, c, mana_cost);
+		Err(Color::None)
+	}).unwrap();
+	color
+}
+
+fn get_color_and_quantity(mana_cost: &str, c: char) -> (Color, u8){
+	if c.is_numeric(){
+		return (parse_color(mana_cost, c), c.to_string().parse().unwrap());
+	}
+	(parse_color(mana_cost, c), 1)
+}
+
+fn parse_costs_better(mana_cost: &str) -> Cost{
+	let mut payments_vec:Vec<Payment> = vec!();
+	let mut chars = mana_cost.chars().enumerate();
+
+	while let Some(enumerated) = chars.next(){
+		let (i, c) = enumerated;
+		if c == '/'{
+			payments_vec.pop();
+			let prev_color = &mana_cost.chars().nth(i - 1).unwrap();
+			let (prev_color, prev_color_quantity) = get_color_and_quantity(mana_cost, *prev_color);
+			let next_color = &mana_cost.chars().nth(i + 1).unwrap();
+			let (next_color, next_color_quantity) = get_color_and_quantity(mana_cost, *next_color);
+			payments_vec.push(Payment {
+				quantity: 1,
+				color: Color::MultiColor {
+					colors: vec![
+						prev_color,
+						next_color,
+					],
+					multicolor_cost: vec![prev_color_quantity, next_color_quantity],
+				},
+			});
+			chars.next();
+			continue
+		}
+
+		if c.is_numeric() {
+			let (color, quantity) = get_color_and_quantity(mana_cost, c);
+			payments_vec.push(Payment {color, quantity});
+		} else if c.is_alphabetic() {
+			let (color, quantity) = get_color_and_quantity(mana_cost, c);
+			payments_vec.push(Payment {color , quantity: 1 });
+		}
+	}
+
+	Cost::new(payments_vec)
+}
+
+
+use std::time::Instant;
 fn main() {
+	let now = Instant::now();
+	println!("starting");
+	println!("{:.2?}", now);
+	println!("in progress");
 	let cards = CardDB::new();
-	// println!("{:?}", cards.get("+2 Mace"));
+
+	let elapsed = now.elapsed();
+	println!("Elapsed: {:.2?}", elapsed);
+	println!("{:#?}", cards.get("Advice from the Fae"));
+	println!("\n{:#?}", cards.get("Reaper King"));
+	println!("{}", cards.library.len());
 }
 
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	#[test]
+	fn cardsdb_has_all_the_cards(){
+		let cards = CardDB::new();
+		assert_eq!(cards.library.len(), 18432);
+	}
+
+	#[test]
+	fn parse_costs_better_works(){
+		let str = "{G}";
+		let cost = parse_costs_better(&str);
+		assert_eq!(cost.cost.get_key_value(&Color::G), Some((&Color::G, &1)));
+	}
+	#[test]
+	fn parse_costs_better_doesnt_duplicate_multicolors(){
+		let str = "{G/W}{G/W}";
+		let cost = parse_costs_better(&str);
+		assert_eq!(cost.cost
+			.get_key_value(&Color::MultiColor{
+				colors: vec![Color::G, Color::W],
+				multicolor_cost: vec![1,1],
+			}), Some((&Color::MultiColor{
+				colors: vec![Color::G, Color::W],
+				multicolor_cost: vec![1,1],
+		}, &2)));
+
+		// this should fail.
+		assert_eq!(cost.cost.get_key_value(&Color::W), None);
+	}
+	#[test]
+	fn parse_costs_better_accepts_colorless_multicolors(){
+		let str = "{2/U}{2/U}";
+		let cost = parse_costs_better(&str);
+		assert_eq!(cost.cost
+			.get_key_value(&Color::MultiColor{
+				colors: vec![Color::C, Color::U],
+				multicolor_cost: vec![2,1],
+			}), Some((&Color::MultiColor{
+			colors: vec![Color::C, Color::U],
+			multicolor_cost: vec![2,1],
+		}, &2)));
+		println!("{:?}", cost);
+
+		// this should fail.
+		assert_eq!(cost.cost.get_key_value(&Color::C), None);
+	}
+
+	#[test]
+	#[should_panic]
+	fn parse_costs_throws_error_on_unexpected(){
+		let str = "{z}";
+		let cost = parse_costs(&str);
+	}
+
+
+	#[test]
+	fn parse_costs_maps_variable_costs(){
+		let str = "{X}{X}{G}";
+		let cost = parse_costs(&str);
+		assert_eq!(cost.cost.get_key_value(&Color::X), Some((&Color::X, &2)));
+		assert_eq!(cost.cost.get_key_value(&Color::G), Some((&Color::G, &1)));
+	}
 
 	#[test]
 	fn parse_costs_maps_colorless(){
@@ -472,7 +661,7 @@ mod tests {
 			description: "derp".to_string(),
 			layout: "normal".to_string(),
 			keywords: vec![],
-			mana_cost: "".to_string(),
+			mana_cost: parse_costs(""),
 			mana_value: 1,
 			name: "Forest".to_string(),
 			subtypes: vec![],
