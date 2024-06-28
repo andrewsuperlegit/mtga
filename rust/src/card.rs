@@ -91,28 +91,28 @@ pub struct PhysicalBehavior {
 #[derive(Debug, Deserialize)]
 pub struct Card {
 	#[serde(rename(deserialize = "type"))]
-	card_type: String, // because stuff like Artifact - Equipment
+	pub card_type: String, // because stuff like Artifact - Equipment
 	#[serde(rename(deserialize = "types"))]
-	card_types: Vec<CardType>,
-	colors: Vec<Color>,
+	pub card_types: Vec<CardType>,
+	pub colors: Vec<Color>,
 	#[serde(rename(deserialize = "colorIdentity"))]
-	color_identity: Vec<Color>,
+	pub color_identity: Vec<Color>,
 	#[serde(rename(deserialize = "convertedManaCost"), default)]
-	converted_mana_cost: u8,
+	pub converted_mana_cost: u8,
 	#[serde(rename(deserialize = "text"), default)]
-	description: String,
+	pub description: String,
 	#[serde(default)]
-	keywords: Vec<String>,
-	layout: String,
+	pub keywords: Vec<String>,
+	pub layout: String,
 	#[serde(rename(deserialize = "manaCost"), default)]
-	mana_cost: Cost,
+	pub mana_cost: Cost,
 	#[serde(rename(deserialize = "manaValue"), default)]
-	mana_value: u8,
-	name: String,
+	pub mana_value: u8,
+	pub name: String,
 	// todo customize deserialization/parsing to do this
 	// physical_behavior: PhysicalBehavior,
-	subtypes: Vec<String>,
-	supertypes: Vec<String>,
+	pub subtypes: Vec<String>,
+	pub supertypes: Vec<String>,
 }
 
 

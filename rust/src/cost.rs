@@ -12,12 +12,12 @@ pub struct Payment{
 
 #[derive(Debug, PartialEq, Default)]
 pub struct Cost {
-	cost: HashMap<Color, u8>,
+	pub cost: HashMap<Color, u8>,
 	// has_variable_cost: bool
 }
 
 impl Cost {
-	fn new(payments: Vec<Payment>) -> Self{
+	pub fn new(payments: Vec<Payment>) -> Self{
 		let mut cost =  HashMap::new();
 		if payments.len() == 0 {
 			cost.insert(Color::None, 0);
@@ -25,7 +25,7 @@ impl Cost {
 		payments.iter().for_each(|payment|{
 			let key = &payment.color;
 			if cost.contains_key(key) {
-				let mut val = cost.get_mut(key).unwrap();
+				let val = cost.get_mut(key).unwrap();
 				*val += &payment.quantity;
 			} else {
 				cost.insert(payment.color.clone(), payment.quantity);
@@ -47,7 +47,6 @@ impl<'de> Deserialize<'de> for Cost {
 		let cow = Cow::<str>::deserialize(deserializer)?;
 		let s: &str = cow.as_ref();
 		Ok(parse_costs_better(s))
-		// Ok(parse_costs(s))
 	}
 }
 
@@ -72,8 +71,6 @@ pub fn parse_costs(mana_cost: &str) -> Cost{
 }
 
 
-use strum_macros::{EnumString, VariantArray, VariantNames};
-use strum;
 
 pub fn parse_color(mana_cost: &str, c: char) -> Color {
 	if c.is_numeric(){
@@ -124,7 +121,7 @@ pub fn parse_costs_better(mana_cost: &str) -> Cost{
 			let (color, quantity) = get_color_and_quantity(mana_cost, c);
 			payments_vec.push(Payment {color, quantity});
 		} else if c.is_alphabetic() {
-			let (color, quantity) = get_color_and_quantity(mana_cost, c);
+			let (color, _) = get_color_and_quantity(mana_cost, c);
 			payments_vec.push(Payment {color , quantity: 1 });
 		}
 	}
@@ -156,7 +153,6 @@ mod tests {
 			multicolor_cost: vec![1,1],
 		}, &2)));
 
-		// this should fail.
 		assert_eq!(cost.cost.get_key_value(&Color::W), None);
 	}
 	#[test]
@@ -173,7 +169,6 @@ mod tests {
 		}, &2)));
 		println!("{:?}", cost);
 
-		// this should fail.
 		assert_eq!(cost.cost.get_key_value(&Color::C), None);
 	}
 
@@ -181,7 +176,7 @@ mod tests {
 	#[should_panic]
 	fn parse_costs_throws_error_on_unexpected(){
 		let str = "{z}";
-		let cost = parse_costs(&str);
+		parse_costs(&str);
 	}
 
 

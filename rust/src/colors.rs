@@ -98,21 +98,21 @@ mod tests {
 	#[test]
 	fn color_accepts_single_letter_uppercase() {
 		let green = Color::G;
-		let G = Color::from_str("G");
-		assert_eq!(green, G.unwrap());
+		let g = Color::from_str("G");
+		assert_eq!(green, g.unwrap());
 	}
 
 	#[test]
 	fn color_accepts_brackets() {
 		let green = Color::G;
-		let G = Color::from_str("{green}");
-		assert_eq!(green, G.unwrap());
+		let g = Color::from_str("{green}");
+		assert_eq!(green, g.unwrap());
 	}
 
 	#[test]
 	fn color_accepts_case_insensitive_brackets() {
 		let green = Color::G;
-		let G = Color::from_str("{GReen}");
-		assert_eq!(green, G.unwrap());
+		let g = Color::from_str("{GReen}");
+		assert_eq!(green, g.unwrap());
 	}
 }

@@ -1,12 +1,11 @@
 #![allow(warnings)]
+
 mod colors;
 mod cost;
 mod card;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 use std::collections::HashMap;
-use card::CardType::Land;
-use std::str::FromStr;
 use strum::VariantNames;
 use std::error::Error;
 use std::fs::File;
@@ -118,7 +117,6 @@ struct GameState {
 	first_player: Player,
 }
 
-use serde::Deserializer;
 
 fn populate_library(){
 	todo!("Write the parser that accepts a vector of card names \
@@ -129,7 +127,6 @@ fn populate_library(){
 
 use std::time::Instant;
 use card::Card;
-use colors::Color;
 
 fn main() {
 	let now = Instant::now();
@@ -140,9 +137,12 @@ fn main() {
 
 	let elapsed = now.elapsed();
 	println!("Elapsed: {:.2?}", elapsed);
-	println!("{:#?}", cards.get("Advice from the Fae"));
-	println!("\n{:#?}", cards.get("Reaper King"));
+	// println!("{:#?}", cards.get("Advice from the Fae"));
+	// println!("\n{:#?}", cards.get("Reaper King"));
 	println!("{}", cards.library.len());
+
+	let card = cards.get("Returned Pastcaller");
+	println!("{:#?}", card.unwrap().mana_cost.cost);
 }
 
 #[cfg(test)]
