@@ -1,9 +1,17 @@
-import {Type, CardLocation, Color, ColorMap, ColorKeywords, Multicolored, LandTypes, TapPurpose} from './Enums';
-import {CardBehavior, CardVisibilityBehavior, CardEntranceBehavior, CardBattlefieldBehavior, CardExitBehavior, shouldEnterTapped} from './CardBehavior';
-import dataset from './noForeignModernAtomic.json' with { type: "json" };
+import {CardLocation, Color, ColorKeywords, ColorMap, LogicalQuantifiers, TapPurpose, Type} from './Enums';
+import {
+	CardBattlefieldBehavior,
+	CardBehavior,
+	CardEntranceBehavior,
+	CardExitBehavior,
+	CardVisibilityBehavior,
+	shouldEnterTapped
+} from './CardBehavior';
+import dataset from './noForeignModernAtomic.json' with {type: 'json'};
+import {identifyManaToTap, identifyKeywords} from "@/CardHelpers";
 
-const LOGLEVEL = 'NORMAL';
-
+const deck = [];
+const lands = [];
 
 type Payment = [color: Color, quantity: number];
 
@@ -21,13 +29,19 @@ class Cost {
 			this.costs[payment[0]] = payment[1];
 		}
 	}
+	toString():string{
+		let str = "";
+		for (let [color, amount] of Object.entries(this.costs)){
+			str += `${color}: ${amount}`;
+		}
+		return str;
+	}
 	log(){
 		for(let c in this.costs){
 			console.log(`${c} : ${this.costs[c]}`)
 		}
 	}
 }
-
 
 class StandardCard{
 	behavior: CardBehavior;
@@ -38,7 +52,9 @@ class StandardCard{
 	name: string;
 	type: Type;
 	rawData: Object
-	constructor(type, color, cost, name, description, behavior, rawData, location=CardLocation.library){
+
+	constructor(type: Type, color: Color[], cost: Cost, name: string, description: string,
+							behavior: CardBehavior, rawData: Object, location: CardLocation = CardLocation.library) {
 		this.behavior = behavior;
 		this.color = color;
 		this.cost = cost;
@@ -56,31 +72,6 @@ class StandardCard{
 }
 
 
-
-// const LOGLEVEL = 'DEBUG';
-
-const manaSearchRegex = /\{\w+\}|(\sor\s)|(\sand\s)|(add)|\./ig;
-
-function identifyKeywords(text:string):string[]{
-	let keywords = text.match(manaSearchRegex);
-	if(LOGLEVEL === 'DEBUG'){ console.log('\nidentifyKeywords', keywords, text, '\n'); }
-	return keywords;
-}
-
-
-function identifyManaToTap(text){
-	let keywords = identifyKeywords(text);
-	let indexOfTap = keywords.findIndex((text) => text === '{T}')
-	let sliced = keywords.slice(indexOfTap);
-	let endOfSentenceIndex = sliced.findIndex((text)=> text === '.');
-	let manaKeywords = sliced.slice(0, endOfSentenceIndex);
-
-
-	if(LOGLEVEL === 'DEBUG'){ console.log('\nidentifyManaToTap', manaKeywords, text, '\n')}
-	return manaKeywords;
-}
-
-
 class BasicLand extends StandardCard{
 	manaTapAmount = {
 		[Color.B]: 0
@@ -92,24 +83,25 @@ class BasicLand extends StandardCard{
 	};
 	manaAmountIsMutuallyExclusive: boolean = false;
 
-	constructor(color, name, description, rawData){
+	constructor(color:Color[], name:string, description:string, rawData:Object){
+		let cost = new Cost();
 		let visibilityBehavior = new CardVisibilityBehavior(CardLocation.library, false);
 		let entranceBehavior = new CardEntranceBehavior(false, false, shouldEnterTapped(description));
 		let battlefieldBehavior = new CardBattlefieldBehavior(false, false, true, false, false, false, false, TapPurpose.mana)
 		let exitBehavior = new CardExitBehavior(true, false, CardLocation.graveyard);
 		let behavior = new CardBehavior(visibilityBehavior, entranceBehavior, battlefieldBehavior, exitBehavior);
-		super(Type.land, color, 0, name, description, behavior, rawData)
+		super(Type.land, color, cost, name, description, behavior, rawData)
 		this.setManaTapAmount(identifyManaToTap(description));
 	}
 
-	setManaTapAmount(manaValueArray){
+	setManaTapAmount(manaValueArray: string[]){
 		manaValueArray.forEach((keyword)=>{
 			if(this.manaTapAmount.hasOwnProperty(ColorKeywords[keyword])){
 				this.manaTapAmount[ColorKeywords[keyword]]++;
 			}
 		});
 
-		if(manaValueArray.includes(' or ')){
+		if(manaValueArray.includes(LogicalQuantifiers.OR)){
 			this.manaAmountIsMutuallyExclusive = true;
 		} else {
 			this.manaAmountIsMutuallyExclusive = false;
@@ -118,28 +110,26 @@ class BasicLand extends StandardCard{
 }
 
 class NonBasicLand extends BasicLand{
-	constructor(color, name, description, rawData){
+	constructor(color:Color[], name:string, description:string, rawData:Object){
 		super(color, name, description, rawData);
 		this.identifyOtherTappingBehaviors(description);
 		// this.log()
 
 	}
 
-	identifyOtherTappingBehaviors(description){
+	identifyOtherTappingBehaviors(description:string){
 		// console.log('\n\n', description);
 
 		// {T}: Add {C}.
-		// {G/W}, {T}: Add {G}{G}, {G}{W}, or {W}{W}.' <--- FUCK.
-		// ^^^^ and also the comma. fuck.
+		// {G/W}, {T}: Add {G}{G}, {G}{W}, or {W}{W}.' oh no
+		// ^^^^ and also the comma. super oh no.
 		let keywords = identifyKeywords(description);
 		// console.log(description, keywords);
 	}
 
 }
 
-const deck = [];
-const lands = [];
-
+// man the rust implementation of this is so much better.
 for (let cardname in dataset){
 	let card = dataset[cardname][0];
 	if(card.types.includes(Type.land)){
@@ -152,15 +142,8 @@ for (let cardname in dataset){
 				lands.push(new NonBasicLand(color, card.name, card.text, card));
 			}
 		}
-
 	}
 }
-
-
-
-
-
-
 
 deck.forEach(c=>{
 	// console.log(c);
@@ -173,6 +156,5 @@ lands.forEach(l=>{
 	}
 });
 
-console.log('dudeaaaaaakkkkkkk')
-
-export { lands, deck };
+export type {Payment};
+export {lands, deck, Cost, StandardCard, BasicLand, NonBasicLand};

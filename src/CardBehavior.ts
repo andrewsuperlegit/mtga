@@ -25,7 +25,7 @@ export class CardBehavior{
 	}
 
 	tapForMana(dispatch, card){
-		// pretty sure this should be done by the reducer or the action not here but whatever for right now.
+		// todo move this to reducer after you finish setting up redux.
 		this.battlefieldBehavior.isTapped = !this.battlefieldBehavior.isTapped;
 
 		dispatch(tap({data: card, isTapped: this.battlefieldBehavior.isTapped}));

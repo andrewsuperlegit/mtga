@@ -39,15 +39,15 @@ export enum ColorMap{
 ,	white = "W"
 }
 
-function createBracketWrappedColors(): Object{
-	const bracketed = {};
+function createBracketWrappedColors(): {[index:string]: Color} {
+	const bracketed:{[index:string]: Color}= {};
 	for (const [key, value] of Object.entries(Color)) {
 		bracketed[`{${key}}`] = value;
 	}
 	return bracketed;
 }
 
-export const ColorKeywords = createBracketWrappedColors();
+export const ColorKeywords:{[index:string]: Color} = createBracketWrappedColors();
 
 
 export type Multicolored = Color[];
@@ -58,9 +58,17 @@ export enum LandTypes {
 ,	forest= 'forest'
 , mountain= 'mountain'
 , island= 'island'
-};
+}
 
 export enum TapPurpose{
 	mana= 'mana'
 ,	action= 'action'
 }
+
+export enum LogicalQuantifiers{
+	AND = "AND"
+, OR = "OR"
+, ADD = "ADD"
+}
+
+export const LOGLEVEL = "NORMAL";

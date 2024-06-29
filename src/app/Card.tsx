@@ -24,6 +24,8 @@ export default function Card({card, keyName}){
 	}
 
 	function tap(){
+		// redux isn't going to like dispatching the entire card.
+		// todo refactor this to use redux correctly
 		card.behavior.tapForMana(dispatch, card);
 	}
 
@@ -36,7 +38,7 @@ export default function Card({card, keyName}){
 		>
 			<header className="card-header">
 				<h1>{card.name}, {keyName}</h1>
-				<h2>{card.cost}</h2>
+				<h2>{card.cost.toString()}</h2>
 			</header>
 			<div className="image-wrapper">
 				<Image

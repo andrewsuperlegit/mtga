@@ -22,6 +22,8 @@ enum GamePhase{
 	PreGame
 }
 
+
+
 const initialState: GameState = {
 	libraries: [deck, lands]
 ,	graveyards: []
@@ -41,6 +43,10 @@ export const gameSlice = createSlice({
 	name: 'game'
 ,	initialState
 ,	reducers: {
+		/* todo refactor this so that payload objects accept a key value that's set on a card in a
+		    library. each card in the library should have an original key and the library itself should be
+		    a hashmap so we can commit changes to the cards in constant time.
+		*/
 		tap: (state, action: PayloadAction<object>) => {
 			state.value = action.payload;
 		}
@@ -48,7 +54,7 @@ export const gameSlice = createSlice({
 			state.metaGamePhase += 1;
 		}
 	,	confirmLibrary: (state, action:PayloadAction<object>)=>{
-			console.log(action);
+			// console.log(action);
 			// if(state.confirmedLibraries.length === state.playerCount){
 
 			// }
@@ -57,7 +63,7 @@ export const gameSlice = createSlice({
 })
 
 
-export const { tap } = gameSlice.actions;
+export const {tap, confirmLibrary, progressMetaGamePhase} = gameSlice.actions;
 
 const gameReducer = gameSlice.reducer
 

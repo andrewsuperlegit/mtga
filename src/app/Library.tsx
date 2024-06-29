@@ -1,27 +1,35 @@
 import Card from './Card';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { confirmLibrary } from './../Actions';
+import { confirmLibrary } from '@/Actions';
+import {RootState} from "@reduxjs/toolkit/query";
+import {StandardCard} from "@/CardModel";
 
-export default function Library({whos, deck}){
-	const game = useSelector((state: RootState) => state.game);
+interface LibraryProp{
+	whos: string;
+	deck: StandardCard[]
+}
+
+export default function Library({whos, deck}: LibraryProp) {
+	// const game = useSelector((state: RootState) => state.game);
 	const dispatch = useDispatch();
-	console.log(game);
 
 	deck = (deck) ? deck : []
 
-	function confirmLibrary(whos, deck){
+	// todo: redux is gonna have an issue with this because decks aren't serializable.
+	function dispatchConfirmLibrary(whos, deck) {
 		dispatch(confirmLibrary([whos, deck]));
 	}
-	function unconfirmLibrary(whos, deck){
+
+	function unconfirmLibrary(whos, deck) {
 
 	}
 
-	return(
+	return (
 		<>
 			<div>
 				<p>Are you cool with this library?</p>
-				<button onClick={()=>confirmLibrary(whos, deck)}>Yes</button>
+				<button onClick={() => dispatchConfirmLibrary(whos, deck)}>Yes</button>
 				<button>No</button>
 			</div>
 
@@ -30,13 +38,13 @@ export default function Library({whos, deck}){
 				<h2>{whos} deck has {deck.length} cards in it</h2>
 
 				<div className="library">
-				{
-					deck.map((card, idx)=>{
-						return <Card key={idx} keyName={`${idx}-name`} card={card}/>
-					})
-				}
+					{
+						deck.map((card: StandardCard, idx: number) => {
+							return <Card key={idx} keyName={`${idx}-name`} card={card}/>
+						})
+					}
 				</div>
 			</section>
 		</>
 	)
-}
+};
