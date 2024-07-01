@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest --watch"
+    "test": "jest --watch",
+    "rust": "cd rust; nodemon --watch src -e rs --exec cargo run",
+    "rust:test": "cd rust; nodemon --watch src -e rs --exec cargo test",
+    "rust:install": "cd rust; cargo install --path .",
+    "rust:build": "cd rust; cargo build"
   },
   "author": "",
   "license": "ISC",
@@ -16,6 +20,7 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "next": "14.2.3",
+    "nodemon": "^3.1.4",
     "react": "^18",
     "react-dom": "^18"
   },

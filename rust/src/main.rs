@@ -92,7 +92,7 @@ use crate::card::RealCard;
 use crate::card_db::{get_card_db, get_card_db_slow};
 
 
-
+/// just testing that this works.
 pub fn example(){
 	// Use a list of cards to populate library
 	let vec = vec!["Artificer's Dragon", "First Response", "Gaea's Gift",

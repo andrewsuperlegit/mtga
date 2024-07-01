@@ -20,9 +20,10 @@ If you wanna check it out, you can install the Typescript version by cloning the
 and running just running ```npm install```. It uses next so to run it you can just run ```npm run dev``` to check it out.
 
 If you wanna check out the Rust version which is WAY faster (the json file this uses for data is 12mb; it was originally
-56mb but thanks to my formatAtomicData script I got rid of a bunch of data I wouldn't need), go install rust and then run
-```cargo install``` from within the ```/rust``` directory. after that you can run ```cargo run``` to check it out
-(it only exists in the terminal in rust as of right now.) If you want to poke around, I suggest using nodemon to watch 
-your files and recompile the binary. ```nodemon --watch srce - e rs --exec cargo run```
-You can run the tests with ```cargo test```
+56mb but thanks to my formatAtomicData script I got rid of a bunch of data I wouldn't need), [go install rust](https://www.rust-lang.org/tools/install) 
+and then run ```npm run rust:install``` from the root directory of this project. 
+
+After that you can run ```npm run rust``` to check it out. (it only exists in the terminal in rust as of right now.) 
+To run rust tests ```npm run rust:test```
+
 

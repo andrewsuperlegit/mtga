@@ -243,7 +243,7 @@ pub struct RealCard <'a>{
 impl RealCard<'_>{
 	pub fn new(name: &str)-> RealCard {
 		let db = get_card_db();
-		let card = db.get(name).unwrap();
+		let card = db.get_card(name).unwrap();
 		let visibility_behavior = VisibilityBehavior {
 			current_location: CardLocation::Library,
 			revealed: false,
@@ -265,6 +265,7 @@ impl RealCard<'_>{
 		}
 	}
 }
+
 
 
 
