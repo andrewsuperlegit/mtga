@@ -6,9 +6,9 @@ mod colors;
 mod cost;
 mod card;
 mod card_db;
+mod library;
 
 use serde::Deserialize;
-use std::collections::HashMap;
 use strum::VariantNames;
 use std::error::Error;
 
@@ -46,58 +46,6 @@ enum TurnPhase{
 	Cleanup
 }
 
-/// a tuple with the card_name and the number of that card you want in your library/sideboard.
-/// ("Forest", 20)
-struct CardListItem(String, u8);
-
-#[derive(PartialEq, Debug)]
-enum LibraryError{
-
-}
-
-/// Library is a players' library of cards they can play.
-/// cards is just a hashmap of cards so that when someone searches
-/// for cards, we can give them the option to type the card theyre
-/// looking for and look it up in constant time.
-/// sideboard is optional
-///
-#[derive(Debug)]
-struct Library<'a> {
-	/// library is the actual library people will draw from; it can be shuffled and milled, etc.
-	/// if a RealCard in cards has a quantity of 4, there will be 4 copies of the RealCard in library.
-	/// order matters.
-	library: Vec<RealCard<'a>>,
-	/// cards is a way to search through your library in constant time and for holding the actual cards
-	/// I think library is just going to be smart pointers.
-	cards: HashMap<String, RealCard<'a>>,
-
-	sideboard: Vec<Option<RealCard<'a>>>,
-}
-
-impl<'a> Library<'a>{
-	fn new(card_list:Vec<CardListItem>, optional_list:Vec<CardListItem>) -> Result<Library<'a>, LibraryError>{
-		let mut cards = HashMap::new();
-		let mut library = vec![];
-		let mut sideboard= vec![];
-
-		for card in card_list.iter(){
-			let real_card = RealCard::new(&card.0, card.1);
-			// todo i need to make sure that the cards in library stay in sync with the cards in cards.
-			// so i think the cards in library should be smart pointers.
-			// cards.insert(real_card.name, real_card); // this is gonna be a lifetime problem i'm calling it now.
-		}
-
-		Ok(Library{
-			library,
-			cards,
-			sideboard
-		})
-		// todo!("Write the parser that accepts a vector of card names \
-		// and searches the CardDB for those cards, and adds them to \
-		// a players library");
-	}
-}
-
 struct Player{
 	name: String
 }
@@ -119,19 +67,23 @@ struct GameState<'a> {
 
 
 use card::Card;
-use card::RealCard;
-use card_db::{get_card_db, get_card_db_slow};
-
+use card_db::get_card_db;
+use library::{CardListItem, Library};
 
 /// just testing that this works.
 pub fn example(){
 	// Use a list of cards to populate library
-	let vec = vec!["Artificer's Dragon", "First Response", "Gaea's Gift",
-		"Jeskai Banner", "Mind's Eye"];
+	// let vec = vec![
+	// 	CardListItem("Artificer's Dragon".to_string(), 1),
+	// 	CardListItem("First Response".to_string(), 1),
+	// 	CardListItem("Gaea's Gift".to_string(), 1),
+	// 	CardListItem("Jeskai Banner".to_string(), 1),
+	// 	CardListItem("Mind's Eye".to_string(), 3)
+	// ];
+	// let vec_b= vec![];
+	// let lib = Library::new(&vec, &vec_b).unwrap();
+	// println!("{:#?}", lib);
 
-	let res:Vec<RealCard> = vec.iter().map(|name| RealCard::new(name, 2).unwrap()).collect();
-
-	println!("{:#?}", res[2]);
 }
 
 fn main() {

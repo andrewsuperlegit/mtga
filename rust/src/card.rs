@@ -36,7 +36,7 @@ enum TapPurpose{
 	None
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum CardLocation {
 	Exile,
 	Graveyard,
@@ -59,7 +59,7 @@ enum LandTypes{
 
 #[derive(Debug, Default)]
 pub struct VisibilityBehavior {
-	current_location: CardLocation,
+	pub current_location: CardLocation,
 	revealed: bool
 }
 impl VisibilityBehavior{
@@ -266,9 +266,6 @@ impl RealCard<'_>{
 		if !is_basic_land && (quantity > 4 || quantity < 1) {
 			return Err(RealCardError::InvalidQuantity);
 		}
-		// todo maybe add property that's something like... original_card_key that's a (some data structure)
-		// of the cards in library. like... if someone has 4 Insidious Roots in their library
-		// we want to keep track of the ones that are on the battlefield ...
 
 		let visibility_behavior = VisibilityBehavior {
 			current_location: CardLocation::Library,
@@ -291,11 +288,12 @@ impl RealCard<'_>{
 			exit_behavior
 		})
 	}
+
+	pub fn change_current_location(&mut self, new_location: CardLocation){
+		self.visibility_behavior.set_location(new_location);
+		// &self.visibility_behavior.current_location
+	}
 }
-
-
-
-
 
 
 #[cfg(test)]
