@@ -18,10 +18,13 @@ pub struct CardListItem(String, u8);
 pub struct Library<'a> {
 	/// library is the actual library people will draw from; it can be shuffled and milled, etc.
 	/// if a RealCard in cards has a quantity of 4, there will be 4 copies of the RealCard in library.
-	/// order matters. the RealCards in library are REFERENCES to the RealCards in cards.
+	/// order matters.
 	library: Vec<Rc<RefCell<RealCard<'a>>>>,
-	///
+	/// cards is a hashmap that contains all the cards in your library. Used to get cards in
+	/// constant time.
 	cards: HashMap<(String, u8), Rc<RefCell<RealCard<'a>>>>,
+	/// sideboard is a hashmap of cards in your sideboard.
+	// TODO add a function that moves cards from your library to your sideboard and vise-versa.
 	sideboard: HashMap<String, Rc<RefCell<RealCard<'a>>>>,
 }
 
@@ -58,18 +61,21 @@ impl<'a> Library<'a>{
 		})
 	}
 
+	/// gets an immutable reference to a card.
 	fn get_card_immut(&self, card_name: &String, card_key: u8) -> Option<Ref<RealCard<'a>>> {
 		let card_name = card_name.clone();
 		let card = self.cards.get(&(card_name, card_key))?.borrow();
 		Some(card)
 	}
 
+	/// gets a mutable reference to a card.
 	fn get_card(&self, card_name: &String, card_key:u8)-> Option<RefMut<RealCard<'a>>> {
 		let card_name = card_name.clone();
 		let card = self.cards.get(&(card_name, card_key))?.borrow_mut();
 		Some(card)
 	}
 
+	/// gets all cards of a given card name.
 	fn search_cards(&self, card_name: String) -> Vec<Ref<RealCard<'a>>> {
 		let card0 = self.get_card_immut(&card_name, 0).unwrap();
 		let mut vec = vec![];
@@ -77,7 +83,6 @@ impl<'a> Library<'a>{
 			vec.push(self.get_card_immut(&card_name, i).unwrap());
 		}
 		println!("{:#?}", vec);
-		// Ok(vec)
 		vec
 	}
 }
