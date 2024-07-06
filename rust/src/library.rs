@@ -1,3 +1,4 @@
+use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 use crate::card::{RealCard, RealCardError};
@@ -18,10 +19,10 @@ pub struct Library<'a> {
 	/// library is the actual library people will draw from; it can be shuffled and milled, etc.
 	/// if a RealCard in cards has a quantity of 4, there will be 4 copies of the RealCard in library.
 	/// order matters. the RealCards in library are REFERENCES to the RealCards in cards.
-	library: Vec<Rc<RealCard<'a>>>,
+	library: Vec<Rc<RefCell<RealCard<'a>>>>,
 	///
-	cards: HashMap<(String, u8), Rc<RealCard<'a>>>,
-	sideboard: HashMap<String, Rc<RealCard<'a>>>,
+	cards: HashMap<(String, u8), Rc<RefCell<RealCard<'a>>>>,
+	sideboard: HashMap<String, Rc<RefCell<RealCard<'a>>>>,
 }
 
 impl<'a> Library<'a>{
@@ -36,16 +37,18 @@ impl<'a> Library<'a>{
 		for card in card_list.iter(){
 			let (card_name, qty) = (&card.0, card.1);
 			for i in (0..qty){
-				let real_card = Rc::new(RealCard::new(card_name, qty)?);
+				let real_card = Rc::new(RefCell::new(RealCard::new(card_name, qty)?));
 				let real_card_ref = Rc::clone(&real_card);
+
 				library.push(real_card_ref);
-				cards.insert((real_card.name.to_string(), i), real_card);
+				cards.insert((card_name.to_string(), i), real_card);
 			}
 
 		}
 		for card in sideboard_list.iter(){
-			let real_card = Rc::new(RealCard::new(&card.0, card.1)?);
-			sideboard.insert(real_card.name.to_string(), real_card);
+			let (card_name, qty) = (&card.0, card.1);
+			let real_card = Rc::new(RefCell::new(RealCard::new(&card.0, card.1)?));
+			sideboard.insert(card_name.to_string(), real_card);
 		}
 
 		Ok(Library{
@@ -55,16 +58,23 @@ impl<'a> Library<'a>{
 		})
 	}
 
-	fn get_card(&self, card_name: &String, card_key: u8) -> Option<&Rc<RealCard<'a>>> {
+	fn get_card_immut(&self, card_name: &String, card_key: u8) -> Option<Ref<RealCard<'a>>> {
 		let card_name = card_name.clone();
-		self.cards.get(&(card_name, card_key))
+		let card = self.cards.get(&(card_name, card_key))?.borrow();
+		Some(card)
 	}
 
-	fn search_cards(&self, card_name: String) -> Vec<&Rc<RealCard<'a>>> {
-		let card0 = self.get_card(&card_name, 0).unwrap();
+	fn get_card(&self, card_name: &String, card_key:u8)-> Option<RefMut<RealCard<'a>>> {
+		let card_name = card_name.clone();
+		let card = self.cards.get(&(card_name, card_key))?.borrow_mut();
+		Some(card)
+	}
+
+	fn search_cards(&self, card_name: String) -> Vec<Ref<RealCard<'a>>> {
+		let card0 = self.get_card_immut(&card_name, 0).unwrap();
 		let mut vec = vec![];
 		for i in (0..card0.quantity){
-			vec.push(self.get_card(&card_name, i).unwrap());
+			vec.push(self.get_card_immut(&card_name, i).unwrap());
 		}
 		println!("{:#?}", vec);
 		// Ok(vec)
@@ -88,9 +98,9 @@ mod tests {
 		let me0 = &lib.cards[&("Mind's Eye".to_string(), 0)];
 		let me1 = &lib.cards[&("Mind's Eye".to_string(), 1)];
 		let me2 = &lib.cards[&("Mind's Eye".to_string(), 2)];
-		assert_eq!(me0.name, "Mind's Eye".to_string());
-		assert_eq!(me1.name, "Mind's Eye".to_string());
-		assert_eq!(me2.name, "Mind's Eye".to_string());
+		assert_eq!(me0.borrow().name, "Mind's Eye".to_string());
+		assert_eq!(me1.borrow().name, "Mind's Eye".to_string());
+		assert_eq!(me2.borrow().name, "Mind's Eye".to_string());
 		assert_eq!(lib.library.len(), 3);
 	}
 
@@ -106,17 +116,17 @@ mod tests {
 	}
 
 	#[test]
-	fn sanity(){
+	fn get_card_allows_you_to_mutate_a_card(){
 		let vec = vec![
 			CardListItem("Mind's Eye".to_string(), 3)
 		];
 		let vec_b = vec![];
 		let lib = Library::new(&vec, &vec_b).unwrap();
 		let mut card = lib.get_card(&"Mind's Eye".to_string(), 0).unwrap();
-
-		dbg!("{:#?}", Rc::strong_count(card));
 		card.change_current_location(CardLocation::Graveyard);
-		let card2 = lib.get_card(&"Mind's Eye".to_string(), 1).unwrap();
+		let card2 = lib.get_card_immut(&"Mind's Eye".to_string(), 1).unwrap();
+		println!("{:#?}\n\n\n{:#?}", card, card2);
 		assert_ne!(card.visibility_behavior.current_location, card2.visibility_behavior.current_location);
+
 	}
 }
