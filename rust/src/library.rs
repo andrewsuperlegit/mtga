@@ -28,6 +28,9 @@ pub struct Library<'a> {
 	sideboard: HashMap<String, Rc<RefCell<RealCard<'a>>>>,
 }
 
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+
 impl<'a> Library<'a>{
 	/// Accepts 2 vectors of cardnames and quantities like:
 	/// Library::new([("Forest", 20),("Swamp", 15), ("Insidious Roots", 4)], [/* optional sideboard */])
@@ -85,7 +88,16 @@ impl<'a> Library<'a>{
 		println!("{:#?}", vec);
 		vec
 	}
+
+
+	/// shuffles the library
+	fn shuffle_library(&mut self)->(){
+		let mut rng = thread_rng();
+		&self.library.shuffle(&mut rng);
+	}
 }
+
+
 
 
 
@@ -93,6 +105,41 @@ impl<'a> Library<'a>{
 mod tests {
 	use crate::card::CardLocation;
 	use super::*;
+
+	#[test]
+	/// I think that TECHNICALLY this function has the capability of failing randomly.
+	///  because if you truely randomly shuffle something, it's POSSIBLE that it shuffles
+	/// into the same order as before you shuffled. So if this test fails once in a while...
+	/// rerun the test.
+	fn library_shuffle(){
+		let vec = vec![
+			CardListItem("Mind's Eye".to_string(), 1),
+			CardListItem("Forest".to_string(), 1),
+			CardListItem("Swamp".to_string(), 1),
+			CardListItem("Insidious Roots".to_string(), 1),
+			CardListItem("Murder".to_string(), 1),
+			CardListItem("Lightning Storm".to_string(), 1),
+			CardListItem("Island".to_string(), 1),
+			CardListItem("Mountain".to_string(), 1),
+			CardListItem("Reject".to_string(), 1),
+			CardListItem("Opt".to_string(), 1),
+		];
+		let vec_b = vec![];
+		let mut lib = Library::new(&vec, &vec_b).unwrap();
+		let before0 = lib.library[0].borrow().name.clone();
+		let before1 = lib.library[1].borrow().name.clone();
+		let before2 = lib.library[2].borrow().name.clone();
+
+		lib.shuffle_library();
+
+		let after0 = lib.library[0].borrow().name;
+		let after1 = lib.library[1].borrow().name;
+		let after2 = lib.library[2].borrow().name;
+
+		assert_ne!([before0, before1, before2], [after0, after1, after2]);
+
+	}
+
 	#[test]
 	fn library_cards_has_hashmap_of_correct_number_of_cards() {
 		let vec = vec![
