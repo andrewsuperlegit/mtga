@@ -2,6 +2,28 @@ use strum_macros::{EnumString, VariantNames};
 use serde::Deserialize;
 use std::str::FromStr;
 
+
+
+/// Colors are the different possible colors a MTG card can have. There are more than you would think!
+/// B = Black
+/// U = Blue
+/// C = Colorless
+/// G = Green
+/// R = Red
+/// W = White
+/// X = Variable of colorless
+/// S = Snow
+/// P = Phyrexian (aka pay with life)
+/// MultiColor = MultiColor (see struct def)
+/// None = Doesn't have a Color.
+///
+/// You can use from_str to convert a word to a color for example:
+///
+/// ```rust
+///		let g = Color::from_str("green");
+/// 	println!("{}", g);
+/// 	// prints Color::G
+/// ```
 #[derive(
 	Debug, PartialEq, EnumString, Clone,
 	Hash, Eq, VariantNames,
@@ -61,17 +83,16 @@ pub enum Color {
 
 
 
-/*
-Colors is the ordered vector of colors
-multicolor_cost is the ordered vector of costs
-so for example:
-MultiColor{
-	colors: [Color::C, Color::G],
-	multicolor_cost: [2, 1]
-}
-means that for this MultiColor you either have to pay
-2 Colorless, or 1 Green.
- */
+///
+///	Colors is the ordered vector of colors
+///	multicolor_cost is the ordered vector of costs
+///	so for example:
+///	MultiColor{
+///		colors: [Color::C, Color::G],
+///		multicolor_cost: [2, 1]
+///	}
+///	means that for this MultiColor you either have to pay
+///	2 Colorless, or 1 Green.
 pub struct MultiColor{
 	colors: Vec<Color>,
 	multicolor_cost: Vec<u8>,

@@ -1,6 +1,6 @@
 use serde::Deserialize;
 use strum_macros::{EnumString, VariantArray, VariantNames};
-use crate::card_db::get_card_db;
+use crate::card_db::{CardDB, get_card_db};
 use crate::colors::Color;
 use crate::cost::Cost;
 
@@ -36,7 +36,7 @@ enum TapPurpose{
 	None
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq)]
 pub enum CardLocation {
 	Exile,
 	Graveyard,
@@ -59,7 +59,7 @@ enum LandTypes{
 
 #[derive(Debug, Default)]
 pub struct VisibilityBehavior {
-	current_location: CardLocation,
+	pub current_location: CardLocation,
 	revealed: bool
 }
 impl VisibilityBehavior{
@@ -230,20 +230,43 @@ pub struct Card {
 	pub supertypes: Vec<String>,
 }
 
+#[derive(PartialEq, Debug)]
+pub enum RealCardError{
+	CardNotFound,
+	InvalidQuantity,
+}
+
+
 #[derive(Debug)]
 pub struct RealCard <'a>{
-	card: &'a Card,
-	name: &'a str,
-	visibility_behavior: VisibilityBehavior,
-	entrance_behavior: EntranceBehavior,
-	battlefield_behavior: BattlefieldBehavior,
-	exit_behavior: ExitBehavior,
+	pub card: &'a Card,
+	pub name: &'a str,
+	pub quantity: u8,
+	pub visibility_behavior: VisibilityBehavior,
+	pub entrance_behavior: EntranceBehavior,
+	pub battlefield_behavior: BattlefieldBehavior,
+	pub exit_behavior: ExitBehavior,
+}
+
+fn card_is_basic_land(card_types: &Vec<CardType>, supertypes: &Vec<String>) -> bool{
+	(card_types.contains(&CardType::Land) && supertypes.contains(&"Basic".to_string()))
 }
 
 impl RealCard<'_>{
-	pub fn new(name: &str)-> RealCard {
-		let db = get_card_db();
-		let card = db.get_card(name).unwrap();
+	pub fn new(name: &str, quantity: u8)-> Result<RealCard, RealCardError> {
+		let db: &CardDB = get_card_db();
+		let card_result: Result<&Card, RealCardError> = match db.get_card(name){
+			Ok(card) => Ok(card),
+			Err(e) => Err(RealCardError::CardNotFound)
+		};
+		let card = card_result?;
+		let is_basic_land =  card_is_basic_land(&card.card_types, &card.supertypes);
+
+		// can only have up to 4 of the same card in a deck unless its a basic land.
+		if !is_basic_land && (quantity > 4 || quantity < 1) {
+			return Err(RealCardError::InvalidQuantity);
+		}
+
 		let visibility_behavior = VisibilityBehavior {
 			current_location: CardLocation::Library,
 			revealed: false,
@@ -255,25 +278,39 @@ impl RealCard<'_>{
 			hits_exile_on_death: false,
 			location_on_death: CardLocation::Graveyard
 		};
-		RealCard{
+		Ok(RealCard{
 			name,
 			card,
+			quantity,
 			visibility_behavior,
 			entrance_behavior,
 			battlefield_behavior,
 			exit_behavior
-		}
+		})
+	}
+
+	pub fn change_current_location(&mut self, new_location: CardLocation){
+		self.visibility_behavior.set_location(new_location);
+		// &self.visibility_behavior.current_location
 	}
 }
-
-
-
-
 
 
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	#[test]
+	fn real_card_searches_carddb_for_card(){
+		let card = RealCard::new("Forest", 20).unwrap();
+		assert_eq!(card.quantity, 20);
+	}
+
+	#[test]
+	fn real_card_searches_carddb_for_card_and_the_search_is_case_sensitive(){
+		let card = RealCard::new("forest", 20);
+		assert!(card.is_err_and(|e| e == RealCardError::CardNotFound));
+	}
 
 	#[test]
 	fn can_tap_returns_true_the_only_behavior_in_desc_is_a_tap_behavior(){

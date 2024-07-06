@@ -15,6 +15,7 @@ fn get_mtg_library_data_filename_based_on_os()-> String {
 }
 
 #[derive(Debug, Deserialize)]
+/// A database of all the cards. I successfully resisted the urge to call this CardiB. Personal win.
 pub struct CardDB {
 	pub library: HashMap<String, Vec<Card>>,
 	#[serde(skip)]
@@ -45,6 +46,7 @@ impl CardDB {
 		card_db
 	}
 
+// todo make the search case insensitive; will almost certainly involve something with serde rename
 	pub fn get_card(&self, card_name: &str) -> Result<&Card, Box<dyn Error>>{
 		match self.library.get(card_name){
 			Some(card) => Ok(&card[0]),
