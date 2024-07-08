@@ -42,6 +42,7 @@ pub enum CardLocation {
 	Graveyard,
 	Hand,
 	Library,
+	// TemporaryView, // <- for scrying and surveiling?
 	#[default]
 	None
 }
@@ -65,6 +66,9 @@ pub struct VisibilityBehavior {
 impl VisibilityBehavior{
 	pub fn set_location(&mut self, location: CardLocation) {
 		self.current_location = location;
+	}
+	pub fn set_revealed(&mut self, should_reveal: bool){
+		self.revealed = should_reveal;
 	}
 	pub fn is_revealed(&self) -> bool{
 		self.revealed
@@ -106,6 +110,8 @@ pub struct BattlefieldBehavior {
 	is_summon_sick: bool,
 	is_tapped: bool,
 	tap_purpose: Vec<TapPurpose>,
+	power: i32,
+	toughness: i32
 }
 
 fn get_unbracketed_keywords(description:&str) -> Vec<char>{
@@ -159,6 +165,8 @@ impl BattlefieldBehavior{
 		let is_summon_sick = false;
 		let is_tapped = false;
 		let tap_purpose = get_tap_purpose(card, can_tap);
+		let power = card.power.parse().unwrap_or_else(|e| panic!("Card {} had invalid power: {}", card.name, card.power));
+		let toughness = card.toughness.parse().unwrap_or_else(|e| panic!("Card {} had invalid toughness: {}", card.name, card.toughness));
 
 		BattlefieldBehavior{
 			can_attack,
@@ -169,6 +177,8 @@ impl BattlefieldBehavior{
 			is_summon_sick,
 			is_tapped,
 			tap_purpose,
+			power,
+			toughness
 		}
 	}
 }
@@ -192,6 +202,10 @@ impl ExitBehavior{
 	fn update_location_on_death(&mut self, death_location: CardLocation) {
 		self.location_on_death = death_location;
 	}
+}
+
+fn zero() -> String{
+	"0".to_string()
 }
 
 
@@ -225,9 +239,16 @@ pub struct Card {
 	// no point in taking up a bunch of memory to add physical behaviors to cards that aren't
 	// gonna be in the game.
 	// #[serde(skip)]
+
+	/// power and toughness default to zero as strings; the strings are parsed into numbers in
+	/// RealCard.battlefield_behavior
+	#[serde(default="zero")]
+	pub power: String,
 	// pub physical_behavior: PhysicalBehavior,
 	pub subtypes: Vec<String>,
 	pub supertypes: Vec<String>,
+	#[serde(default="zero")]
+	pub toughness: String
 }
 
 #[derive(PartialEq, Debug)]
@@ -291,7 +312,6 @@ impl RealCard<'_>{
 
 	pub fn change_current_location(&mut self, new_location: CardLocation){
 		self.visibility_behavior.set_location(new_location);
-		// &self.visibility_behavior.current_location
 	}
 }
 
@@ -356,6 +376,8 @@ mod tests {
 			is_face_down: false,
 			is_summon_sick: false,
 			tap_purpose: vec![TapPurpose::Mana],
+			power: 0,
+			toughness: 0,
 		};
 		let exit_b = ExitBehavior {
 			hits_graveyard_on_death: true,
@@ -363,7 +385,6 @@ mod tests {
 			location_on_death: CardLocation::Graveyard,
 		};
 		let card = Card {
-			// physical_behavior: card_behavior,
 			card_type: "Land".to_string(),
 			card_types: vec![CardType::Land],
 			color_identity: vec![Color::G],
@@ -375,8 +396,10 @@ mod tests {
 			mana_cost: crate::cost::parse_costs(""),
 			mana_value: 1,
 			name: "Forest".to_string(),
+			power: "0".to_string(),
 			subtypes: vec![],
 			supertypes: vec![],
+			toughness: "0".to_string(),
 		};
 		assert_eq!(card.name, "Forest");
 	}

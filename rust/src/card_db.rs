@@ -15,9 +15,14 @@ fn get_mtg_library_data_filename_based_on_os()-> String {
 }
 
 #[derive(Debug, Deserialize)]
+
 /// A database of all the cards. I successfully resisted the urge to call this CardiB. Personal win.
+/// library and data_filename are both private; to get cards / card info use the get_card method
+/// and to get the carddb, don't call or construct this directly (if you do, each time you're going to
+/// parse whatever huge json file you give it over and over), use the public get_card_db method-
+/// it returns an immutable singleton db that you can call get_card on.
 pub struct CardDB {
-	pub library: HashMap<String, Vec<Card>>,
+	library: HashMap<String, Vec<Card>>,
 	#[serde(skip)]
 	data_filename: String,
 }
@@ -53,15 +58,18 @@ impl CardDB {
 			None => Err(format!("card {} not found ", card_name).into()),
 		}
 	}
-
-
 }
+
+/// returns a singleton CardDB instance that you can use to look up cards on without having to reparse
+/// that massive json file of 13,000 cards.
 pub fn get_card_db() -> &'static CardDB{
 	let mtg_library_data_filename = get_mtg_library_data_filename_based_on_os();
 	static COMPUTATION: OnceLock<CardDB> = OnceLock::new();
 	COMPUTATION.get_or_init(|| CardDB::new(mtg_library_data_filename))
 }
 
+/// this is pretty much just for test purposes to prove that the singleton is a singleton and that
+/// its way tf faster than instantiating a new carddb each time.
 pub fn get_card_db_slow() -> CardDB{
 	let mtg_library_data_filename = get_mtg_library_data_filename_based_on_os();
 	CardDB::new(mtg_library_data_filename)
