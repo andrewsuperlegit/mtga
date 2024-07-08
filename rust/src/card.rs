@@ -58,6 +58,7 @@ enum LandTypes{
 }
 
 
+/// Where is the card, and whether opponents can see it.
 #[derive(Debug, Default)]
 pub struct VisibilityBehavior {
 	pub current_location: CardLocation,
@@ -76,7 +77,7 @@ impl VisibilityBehavior{
 }
 
 
-
+/// How the card enters the battlefield
 #[derive(Debug, Default)]
 pub struct EntranceBehavior{
 	can_have_summoning_sickness: bool,
@@ -99,21 +100,34 @@ impl EntranceBehavior{
 		}
 	}
 }
-
+/// How the card behaves on the battlefield
 #[derive(Debug, Default)]
 pub struct BattlefieldBehavior {
+	/// does it have the ability to attack?
 	can_attack: bool,
+	/// does it have the ability to block?
 	can_block: bool,
+	/// Can it be tapped for a purpose?
 	can_tap: bool,
+	/// can it be turned facedown/faceup?
 	can_turn_face_up: bool,
+	/// is the card face down (disguised?)?
 	is_face_down: bool,
+	/// does this card have summoning sickness?
 	is_summon_sick: bool,
+	/// is it tapped?
 	is_tapped: bool,
+	/// when it is tapped, what does tapping the card do?
 	tap_purpose: Vec<TapPurpose>,
+	/// when it attacks, how much damage does it do? (defaults to 0 because some cards cant attack)
 	power: i32,
+	/// when it blocks how much damage can it take before it dies? (defaults to 0 because some cards
+	/// cant block)
 	toughness: i32
 }
 
+/// searches a string slice for keywords. keywords in mtgjson data are of the format: {_char_}
+/// examples: {T} (tap), {C} (colorless), etc
 fn get_unbracketed_keywords(description:&str) -> Vec<char>{
 	let mut vec = vec![' '];
 	let mut chars = description.chars().enumerate();
@@ -136,7 +150,7 @@ fn get_unbracketed_keywords(description:&str) -> Vec<char>{
 	vec
 }
 
-
+/// given a string slice, returns whether it has a tap keyword in it.
 fn can_tap(description:&str)->bool{
 	let unbracketed_keywords = get_unbracketed_keywords(description);
 	unbracketed_keywords.contains(&'T')
@@ -184,7 +198,7 @@ impl BattlefieldBehavior{
 }
 
 
-
+/// When the card dies, what does it do?
 #[derive(Debug, Default)]
 pub struct ExitBehavior {
 	hits_graveyard_on_death: bool,
@@ -235,16 +249,10 @@ pub struct Card {
 	#[serde(rename(deserialize = "manaValue"), default)]
 	pub mana_value: u8,
 	pub name: String,
-	// ACTUALLY we only need to do this for cards that are in LIBRARIES aka in the game
-	// no point in taking up a bunch of memory to add physical behaviors to cards that aren't
-	// gonna be in the game.
-	// #[serde(skip)]
-
 	/// power and toughness default to zero as strings; the strings are parsed into numbers in
 	/// RealCard.battlefield_behavior
 	#[serde(default="zero")]
 	pub power: String,
-	// pub physical_behavior: PhysicalBehavior,
 	pub subtypes: Vec<String>,
 	pub supertypes: Vec<String>,
 	#[serde(default="zero")]
@@ -259,9 +267,20 @@ pub enum RealCardError{
 
 
 #[derive(Debug)]
+/// RealCards are cards that we actually interact with; They are created via
+/// ```rust
+/// let card_name = "Forest".to_string();
+/// let quantity = 4;
+/// RealCard::new(card_name, quantity);
+/// ```
+/// the ::new searches the card database for that Card, and then creates the various behaviors and
+/// properties we need to do stuff in the game.
 pub struct RealCard <'a>{
+	/// the Card in CardDb
 	pub card: &'a Card,
+	/// the card name. case and punctuation matters.
 	pub name: &'a str,
+	/// how many of this card are in your deck.
 	pub quantity: u8,
 	pub visibility_behavior: VisibilityBehavior,
 	pub entrance_behavior: EntranceBehavior,
@@ -269,6 +288,7 @@ pub struct RealCard <'a>{
 	pub exit_behavior: ExitBehavior,
 }
 
+/// determines if a card is a basic land by searching it's card_types and supertypes
 fn card_is_basic_land(card_types: &Vec<CardType>, supertypes: &Vec<String>) -> bool{
 	(card_types.contains(&CardType::Land) && supertypes.contains(&"Basic".to_string()))
 }
@@ -310,6 +330,7 @@ impl RealCard<'_>{
 		})
 	}
 
+	/// move card from its current location to a new location.
 	pub fn change_current_location(&mut self, new_location: CardLocation){
 		self.visibility_behavior.set_location(new_location);
 	}
