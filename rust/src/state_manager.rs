@@ -105,6 +105,7 @@ pub enum Action {
 	RegressMetaGamePhase,
 	ProgressTurn,
 	ProgressTurnPhase,
+	AddPlayer(String)
 }
 
 pub fn reducer(mut state: GameState, action: Action) -> GameState {
@@ -174,6 +175,12 @@ pub fn reducer(mut state: GameState, action: Action) -> GameState {
 			},
 			..state
 		},
+		Action::AddPlayer(name) => GameState{
+			player_turn: {
+				state.player_turn.add_player(name)
+			},
+			..state
+		},
 	}
 }
 
@@ -193,8 +200,12 @@ impl PlayerTurn{
 		}
 	}
 
-	fn add_player(&mut self, name: String){
+	fn add_player(&mut self, name: String) -> Self{
 		self.players.push(Player{name});
+		Self{
+			players: self.players.clone(),
+			current_turn: self.current_turn.clone()
+		}
 	}
 
 	fn change_turn(&mut self) -> Self{
@@ -229,7 +240,7 @@ pub struct GameState{
 	// todo implement instant stack.
 }
 
-struct SelectPlayerCount;
+pub struct SelectPlayerCount;
 impl Selector<GameState> for SelectPlayerCount{
 	type Result = usize;
 
@@ -238,7 +249,7 @@ impl Selector<GameState> for SelectPlayerCount{
 	}
 }
 
-struct SelectPlayerNames;
+pub struct SelectPlayerNames;
 impl Selector<GameState> for SelectPlayerNames{
 	type Result = Vec<String>;
 
@@ -247,18 +258,21 @@ impl Selector<GameState> for SelectPlayerNames{
 	}
 }
 
-struct SelectFirstPlayer;
+pub struct SelectFirstPlayer;
 impl Selector<GameState> for SelectFirstPlayer{
 	type Result = Player;
 
 	fn select(&self, state: &GameState) -> Self::Result {
-		state.player_turn.players[0].clone()
+		if state.player_turn.players.len() > 0 {
+			return state.player_turn.players[0].clone();
+		}
+		Player{name: "No Players Added Yet".to_string() }
 	}
 }
 
 
 impl GameState{
-	fn new() -> Self{
+	pub fn new() -> Self{
 		Self{
 			current_event: CurrentEvent::None,
 			meta_game_phase: MetaGamePhase::ChoosePlayerCount,
@@ -269,9 +283,6 @@ impl GameState{
 			turn_phase: TurnPhase::Untap
 		}
 	}
-	// fn handle_player_cant_draw(player:Player){
-	//
-	// }
 }
 
 #[cfg(test)]
