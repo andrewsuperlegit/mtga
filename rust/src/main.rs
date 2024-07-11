@@ -7,15 +7,12 @@ mod cost;
 mod card;
 mod card_db;
 mod library;
-mod r#state_manager;
+mod state_manager;
 
-use serde::Deserialize;
-use strum::VariantNames;
-use std::error::Error;
+
 use std::thread::sleep;
 use std::time::Duration;
 use redux_rs::{Store};
-use card_db::get_card_db;
 use crate::state_manager::{Action, GameState, reducer};
 
 
@@ -23,5 +20,6 @@ use crate::state_manager::{Action, GameState, reducer};
 async fn main() {
 	let store = Store::new(reducer);
 	store.subscribe(|state: &GameState| println!("New state: {:?}", state)).await;
+	// todo implement the front end so we can start playing the game!
 }
 
