@@ -8,12 +8,16 @@ mod card;
 mod card_db;
 mod library;
 mod state_manager;
+mod selectors;
+mod reducers;
 
 
 use std::thread::sleep;
 use std::time::Duration;
-use redux_rs::{Store};
-use crate::state_manager::{Action, GameState, reducer, SelectPlayerCount, SelectPlayerNames, SelectFirstPlayer, CurrentEvent, Player, EventSource};
+use redux_rs::Store;
+use reducers::{Action, reducer};
+use selectors::{SelectFirstPlayer, SelectPlayerCount, SelectPlayerNames};
+use crate::state_manager::GameState;
 
 
 #[tokio::main]
