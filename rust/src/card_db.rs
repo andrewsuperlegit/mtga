@@ -9,9 +9,9 @@ use std::env::consts::{OS};
 
 fn get_mtg_library_data_filename_based_on_os()-> String {
 	if OS == "windows"{
-		return "src\\noForeignModernAtomic-rust.json".to_string();
+		return "src\\data\\Atomic.json".to_string();
 	}
-	"src/noForeignModernAtomic-rust.json".to_string()
+	"src/data/Atomic.json".to_string()
 }
 
 #[derive(Debug, Deserialize)]
@@ -34,7 +34,6 @@ fn get_file(filename: &str) -> File{
 			card data: {}", error)
 	}
 }
-
 
 impl CardDB {
 	fn new(filename: String) -> CardDB {
@@ -84,7 +83,7 @@ mod tests {
 	fn cardsdb_has_all_the_cards(){
 		let filename = get_mtg_library_data_filename_based_on_os();
 		let cards = CardDB::new(filename);
-		assert_eq!(cards.library.len(), 18432);
+		assert_eq!(cards.library.len(), 28925);
 	}
 
 	#[test]

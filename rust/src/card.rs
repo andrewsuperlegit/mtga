@@ -14,7 +14,6 @@ pub enum CardType {
 	Battle,
 	Commander,
 	Creature,
-	Dungeon,
 	Enchantment,
 	Equipment,
 	Instant,
@@ -25,7 +24,25 @@ pub enum CardType {
 	Basic,
 	Legendary,
 	Snow,
-	Tribal,
+
+
+// weird types that arent really types but i guess are types according to mtgjson:
+	Dungeon,
+	Legend,
+	Scheme,
+	Plane,
+	Conspiracy,
+	Vanguard,
+	Summon,
+	Kindred,
+	Hero,
+	Rat,
+	Rogue,
+	Jaguar,
+	Phenomenon,
+	Dragon,
+	Goblin,
+	Knights
 }
 
 
@@ -179,8 +196,19 @@ impl BattlefieldBehavior{
 		let is_summon_sick = false;
 		let is_tapped = false;
 		let tap_purpose = get_tap_purpose(card, can_tap);
-		let power = card.power.parse().unwrap_or_else(|e| panic!("Card {} had invalid power: {}", card.name, card.power));
-		let toughness = card.toughness.parse().unwrap_or_else(|e| panic!("Card {} had invalid toughness: {}", card.name, card.toughness));
+
+		let mut power = card.power.clone();
+		let mut toughness = card.toughness.clone();
+
+		if power == "*" {
+			power = "0".to_string();
+		}
+		if toughness == "*"{
+			toughness = "0".to_string();
+		}
+
+		let power = power.parse().unwrap_or_else(|e| panic!("Card {} had invalid power: {}", card.name, card.power));
+		let toughness = toughness.parse().unwrap_or_else(|e| panic!("Card {} had invalid toughness: {}", card.name, card.toughness));
 
 		BattlefieldBehavior{
 			can_attack,
@@ -261,7 +289,7 @@ pub struct Card {
 
 #[derive(PartialEq, Debug)]
 pub enum RealCardError{
-	CardNotFound,
+	CardNotFound(String),
 	InvalidQuantity,
 }
 
@@ -298,7 +326,7 @@ impl RealCard<'_>{
 		let db: &CardDB = get_card_db();
 		let card_result: Result<&Card, RealCardError> = match db.get_card(name){
 			Ok(card) => Ok(card),
-			Err(e) => Err(RealCardError::CardNotFound)
+			Err(e) => Err(RealCardError::CardNotFound(name.to_string()))
 		};
 		let card = card_result?;
 		let is_basic_land =  card_is_basic_land(&card.card_types, &card.supertypes);
@@ -350,7 +378,7 @@ mod tests {
 	#[test]
 	fn real_card_searches_carddb_for_card_and_the_search_is_case_sensitive(){
 		let card = RealCard::new("forest", 20);
-		assert!(card.is_err_and(|e| e == RealCardError::CardNotFound));
+		assert!(card.is_err_and(|e| e == RealCardError::CardNotFound("forest".to_string())));
 	}
 
 	#[test]
