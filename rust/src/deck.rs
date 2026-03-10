@@ -20,23 +20,29 @@ pub struct Deck<'a> {
 	/// library is the actual library people will draw from; it can be shuffled and milled, etc.
 	/// if a RealCard in cards has a quantity of 4, there will be 4 copies of the RealCard in library.
 	/// order matters.
-	library: Vec<Rc<RefCell<RealCard<'a>>>>,
+	pub library: Vec<Rc<RefCell<RealCard<'a>>>>,
 	/// cards is a hashmap that contains all the cards in your library. Used to get cards in
 	/// constant time.
-	cards: HashMap<(String, u8), Rc<RefCell<RealCard<'a>>>>,
+	pub cards: HashMap<(String, u8), Rc<RefCell<RealCard<'a>>>>,
 	/// sideboard is a hashmap of cards in your sideboard.
 	// TODO add a function that moves cards from your library to your sideboard and vise-versa.
-	sideboard: HashMap<String, Rc<RefCell<RealCard<'a>>>>,
-	graveyard: Vec<Rc<RefCell<RealCard<'a>>>>,
-	exile: Vec<Rc<RefCell<RealCard<'a>>>>,
-	player: Player,
+	pub sideboard: HashMap<String, Rc<RefCell<RealCard<'a>>>>,
+	pub graveyard: Vec<Rc<RefCell<RealCard<'a>>>>,
+	pub exile: Vec<Rc<RefCell<RealCard<'a>>>>,
+	pub player: Player,
 }
 
 impl<'a> Deck<'a>{
 	/// Accepts 2 vectors of cardnames and quantities like:
 	/// Library::new([("Forest", 20),("Swamp", 15), ("Insidious Roots", 4)], [/* optional sideboard */])
 	/// and converts them into a Library.
-	pub fn new(player: Player, card_list: &'a Vec<CardListItem>, sideboard_list: &'a Vec<CardListItem>) -> Result<Deck<'a>, RealCardError>{
+	pub fn new(
+		player: Player,
+		card_list: &'a Vec<CardListItem>,
+		sideboard_list: &'a Vec<CardListItem>)
+		-> Result<Deck<'a>, RealCardError>{
+
+
 		let mut cards = HashMap::new();
 		let mut library = vec![];
 		let mut sideboard= HashMap::new();
@@ -46,7 +52,7 @@ impl<'a> Deck<'a>{
 		for card in card_list.iter(){
 			let (card_name, qty) = (&card.0, card.1);
 			for i in (0..qty){
-				let real_card = Rc::new(RefCell::new(RealCard::new(card_name, qty)?));
+				let real_card = Rc::new(RefCell::new(RealCard::new(card_name, qty, i)?));
 				let real_card_ref = Rc::clone(&real_card);
 
 				library.push(real_card_ref); // todo: problem... i don't know which card (i) this is in library.
@@ -56,7 +62,7 @@ impl<'a> Deck<'a>{
 		}
 		for card in sideboard_list.iter(){
 			let (card_name, qty) = (&card.0, card.1);
-			let real_card = Rc::new(RefCell::new(RealCard::new(&card.0, card.1)?));
+			let real_card = Rc::new(RefCell::new(RealCard::new(card_name, qty, qty)?));
 			sideboard.insert(card_name.to_string(), real_card);
 		}
 
@@ -99,6 +105,11 @@ impl<'a> Deck<'a>{
 	pub fn shuffle_library(&mut self)->(){
 		let mut rng = thread_rng();
 		&self.library.shuffle(&mut rng);
+	}
+
+	pub fn get_library_card_names_in_order(&self) -> Vec<&str>{
+		let names: Vec<&str> = self.library.iter().map(|card| card.borrow().name).collect();
+		names
 	}
 
 	/// draw a card from your deck's library to your hand.

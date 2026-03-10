@@ -310,6 +310,7 @@ pub struct RealCard <'a>{
 	pub name: &'a str,
 	/// how many of this card are in your deck.
 	pub quantity: u8,
+	pub key: u8,
 	pub visibility_behavior: VisibilityBehavior,
 	pub entrance_behavior: EntranceBehavior,
 	pub battlefield_behavior: BattlefieldBehavior,
@@ -321,14 +322,17 @@ fn card_is_basic_land(card_types: &Vec<CardType>, supertypes: &Vec<String>) -> b
 	(card_types.contains(&CardType::Land) && supertypes.contains(&"Basic".to_string()))
 }
 
+
+
 impl RealCard<'_>{
-	pub fn new(name: &str, quantity: u8)-> Result<RealCard, RealCardError> {
+	pub fn new(name: &str, quantity: u8, key:u8)-> Result<RealCard, RealCardError> {
 		let db: &CardDB = get_card_db();
 		let card_result: Result<&Card, RealCardError> = match db.get_card(name){
 			Ok(card) => Ok(card),
 			Err(e) => Err(RealCardError::CardNotFound(name.to_string()))
 		};
 		let card = card_result?;
+
 		let is_basic_land =  card_is_basic_land(&card.card_types, &card.supertypes);
 
 		// can only have up to 4 of the same card in a deck unless its a basic land.
@@ -347,15 +351,18 @@ impl RealCard<'_>{
 			hits_exile_on_death: false,
 			location_on_death: CardLocation::Graveyard
 		};
-		Ok(RealCard{
+		Ok(
+			RealCard{
 			name,
 			card,
 			quantity,
+			key,
 			visibility_behavior,
 			entrance_behavior,
 			battlefield_behavior,
 			exit_behavior
-		})
+		}
+		)
 	}
 
 	/// move card from its current location to a new location.

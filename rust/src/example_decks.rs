@@ -84,3 +84,7 @@ pub fn build_blakes_example_deck() -> Vec<CardListItem>{
 		CardListItem("Mountain".to_string(), 11),
 	]
 }
+
+
+
+

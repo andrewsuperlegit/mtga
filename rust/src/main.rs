@@ -21,6 +21,8 @@ use selectors::{SelectFirstPlayer, SelectPlayerCount, SelectPlayerNames};
 use crate::example_decks::build_blakes_example_deck;
 use crate::deck::Deck;
 use crate::state_manager::{GameState, Player};
+use wasm_bindgen::prelude::*;
+
 
 
 #[tokio::main]
@@ -29,11 +31,18 @@ async fn main() {
 	let store = Store::new_with_state(reducer, gs);
 	let blakes_cards = build_blakes_example_deck();
 	let blakes_sideboard = &vec![];
-	let blakes_deck = Deck::new(Player{name: "Blake".to_string()}, &blakes_cards, &blakes_sideboard);
+	let mut blakes_deck = Deck::new(Player{name: "Blake".to_string()}, &blakes_cards, &blakes_sideboard).unwrap();
+
+
+	println!("{:#?}", blakes_deck.get_library_card_names_in_order());
+	blakes_deck.shuffle_library();
+	println!("{:#?}", blakes_deck.get_library_card_names_in_order());
+	blakes_deck.shuffle_library();
+	println!("{:#?}", blakes_deck.get_library_card_names_in_order());
 
 	store.subscribe(|state: &GameState | println!("New state: {:#?}", state)).await;
 
-	println!("{:#?}", blakes_deck);
+	// println!("{:#?}", blakes_deck.library);
 
 	println!("There are {} players", store.select(SelectPlayerCount).await);
 	println!("Players are named: {:?} ", store.select(SelectPlayerNames).await);
